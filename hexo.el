@@ -102,3 +102,5 @@ Please run this under _post/ or _draft/ within Dired buffer."
               (message "Now in \"_posts\""))
           (message "Current file doesn't in _posts or _drafts directory."))))))
 
+
+(provide 'hexo)
