@@ -1,5 +1,7 @@
 ;; hexo.el - Utilities which make Hexo + Emacs more convenient.
 ;; Author: kuanyui <azazabc123@gmail.com>
+
+;;;###autoload
 (defun hexo-new ()
   "Call `hexo new` anywhere as long as in any child directory
  under a Hexo repository.
@@ -36,14 +38,14 @@ under theme/default/layout/"
           (progn
             (message "Not in a hexo or its child directory.")))))))
 
-;; 根據文章內容來 touch -t 文章以方便按照時間排序。
+;;;###autoload
 (defun hexo-touch-files-in-dir-by-time ()
   "`touch' markdown article files according their \"date: \" to
 make it easy to sort file according date in Dired.
-Please run this under _post/ or _draft/ within Dired buffer."
+Please run this under _posts/ or _draft/ within Dired buffer."
   (interactive)
   (if (and (eq major-mode 'dired-mode)
-           (or (equal (buffer-name) "_post")
+           (or (equal (buffer-name) "_posts")
                (equal (buffer-name) "_draft")))
       (progn
         (let (current-file-name file-list)
@@ -76,31 +78,45 @@ Please run this under _post/ or _draft/ within Dired buffer."
              file-list))) ;; 這個file-list為lambda的arg
         (revert-buffer)
         (message "Done."))
-    (message "Please run this under _post/ or _draft/ within Dired buffer.")))
+    (message "Please run this under _posts/ or _drafts/ within Dired buffer.")))
 
 
-;; 將當前檔案在 _post 與 _drafts 兩者之間切換（mv）。
+;;;###autoload
 (defun hexo-move-article ()
-  "Move current file between _post and _draft"
+  "Move current file between _post and _draft;
+You can run this function in dired or a hexo article."
   (interactive)
-  (let* ((cur-file (buffer-name))
-         (cur-dir DEF-DIR)
-         (cur-path (buffer-file-name)))
-    (save-buffer)
-    (save-match-data
-      (if (string-match "\\(.+/\\)_posts/$" cur-dir)
-          (let* ((new-file-name (format "%s%s%s" (match-string 1 cur-dir) "_drafts/" cur-file)))
-            (kill-buffer)
-            (rename-file cur-path new-file-name)
-            (find-file new-file-name)
-            (message "Now in \"_drafts\""))
-        (if (string-match "\\(.+/\\)_drafts/$" cur-dir)
-            (let* ((new-file-name (format "%s%s%s" (match-string 1 cur-dir) "_posts/" cur-file)))
-              (kill-buffer)
-              (rename-file cur-path new-file-name)
-              (find-file new-file-name)
-              (message "Now in \"_posts\""))
-          (message "Current file doesn't in _posts or _drafts directory."))))))
+  (if (string-match "/\\(_posts/\\|_drafts/\\)$" default-directory)
+      (let* ((parent-dir (file-truename (concat default-directory "../")))
+             (dest-dir (if (string-match "_drafts/$" default-directory) "_posts/" "_drafts/")))
+        (cond ((eq major-mode 'markdown-mode)
+               (let* ((cur-file (buffer-file-name))
+                      (new-file (concat parent-dir dest-dir (buffer-name))))
+                 (save-buffer)
+                 (kill-buffer)
+                 (rename-file cur-file new-file)
+                 (find-file new-file)
+                 (message (format "Now in %s" dest-dir))))
+              ((eq major-mode 'dired-mode)
+               (dired-rename-file (dired-get-filename nil)
+                                  (concat parent-dir dest-dir (dired-get-filename t))
+                                  nil)
+               (message (format "The article has been moved to %s" dest-dir)))))
+    (message "You have to run this in a hexo article buffer or dired")))
 
+;;;###autoload
+(defun hexo-update-current-article-date ()
+  "Update article's date by current time.
+Please run this function in the article."
+  (interactive)
+  (save-excursion
+    (goto-char (point-min))
+    (save-match-data
+      (if (re-search-forward "^date: [0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\} [0-9]\\{2\\}:[0-9]\\{2\\}:[0-9]\\{2\\}" nil :no-error)
+          (let ((current-time (format-time-string "date: %Y-%m-%d %H:%M:%S")))
+            (replace-match current-time)
+            (save-buffer)
+            (message (concat "Date updated: " current-time)))
+        (message "Didn't find any time stamp in this article, abort.")))))
 
 (provide 'hexo)
