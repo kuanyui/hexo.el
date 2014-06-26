@@ -1,5 +1,7 @@
 ;; hexo.el - Utilities which make Hexo + Emacs more convenient.
 ;; Author: kuanyui <azazabc123@gmail.com>
+;; License: WTFPL 1.0
+;; Code:
 
 ;;;###autoload
 (defun hexo-new ()
