@@ -108,11 +108,14 @@ You can run this function in dired or a hexo article."
 
 ;;;###autoload
 (defun hexo-update-current-article-date ()
-  "Update article's date by current time.
+  "Update article's date stamp (at the head) by current time.
 Please run this function in the article."
   (interactive)
-  (if (yes-or-no-p "This operation may *change the permanent link* of this article, continue? ")
-      (save-excursion
+  (cond
+   ((not (eq major-mode 'markdown-mode))
+    (message "Please run this function in a markdown file. Action cancelled."))
+   ((yes-or-no-p "This operation may *change the permanent link* of this article, continue? ")
+    (save-excursion
         (goto-char (point-min))
         (save-match-data
           (if (re-search-forward "^date: [0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\} [0-9]\\{2\\}:[0-9]\\{2\\}:[0-9]\\{2\\}" nil :no-error)
@@ -120,8 +123,8 @@ Please run this function in the article."
                 (replace-match current-time)
                 (save-buffer)
                 (message (concat "Date updated: " current-time)))
-            (message "Didn't find any time stamp in this article, abort."))))
-    (message "Canceled.")))
+            (message "Didn't find any time stamp in this article, abort.")))))
+    ))
 
 ;; (defun hexo-insert-article-link ()
 ;;   ;; permalink: :year/:month/:day/:title/
@@ -158,53 +161,6 @@ Please run this function in the article."
 ;; 
 ;;           )
 
-(defun hexo-toc-remove ()
-  (interactive)
-  (save-excursion
-    (goto-char (point-min))
-    (replace-regexp "^<div id=[\"']text-table-of-contents[\"'].+$" "")
-    (goto-char (point-min))
-    (replace-regexp "<a id=[\"']sec-[0-9]+[\"'] name=[\"']sec-[0-9]+[\"']></a>$" "")
-  ))
-
-(defvar hexo-toc-header-and-footer-html
-  ["<div id=\"text-table-of-contents\" style='background-color:#f0f0f7;border-left:5px solid #568DBE;padding:10px 20px;margin:1em 0;display:table;'><h3 style='color:#505050;margin-top:10px !important;'>Contents</h3>"
-   "</div>"])
-
-(defun hexo-toc-insert ()
-  "Insert a table of contents in the position of cursor.
-Note this is only for Markdown format."
-  (interactive)
-  (hexo-remove-toc)
-  (let (toc fin (num 1))
-    (save-excursion
-      (save-excursion
-        (goto-char (point-min))
-        (while (re-search-forward "^# ?\\([^#] ?.+\\)" nil :no-error)
-          (when (and (not (eq (face-at-point) 'markdown-inline-code-face))
-                     (not (eq (face-at-point) 'markdown-pre-face)))
-            (push (cons num (match-string 1)) toc)
-            (end-of-line)
-            (insert (format "<a id=\"sec-%s\" name=\"sec-%s\"></a>" num num))
-            (incf num))))
-    (insert
-     (format "%s%s%s"
-             (elt hexo-toc-header-and-footer-html 0)
-             (mapconcat
-              (lambda (x)
-                (format "<a href=\"#sec-%s\" style=\"color:#505050\">%s. %s</a><br>"
-                        (car x) (car x) (hexo-toc-string-replacer (cdr x))))
-              (reverse toc)
-              "")
-             (elt hexo-toc-header-and-footer-html 1))))))
-
-(defun hexo-toc-string-replacer (string)
-  "Remove markdown markup symbols (e.g. `*_ )."
-  (mapcar
-   (lambda (x)
-     (setq string (replace-regexp-in-string x "" string)))
-   '("`" "\\*" "_"))
-  string)
 
 
 
