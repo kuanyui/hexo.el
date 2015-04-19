@@ -11,7 +11,8 @@ That's to say, you can use this function to create new post, even though
 under theme/default/layout/"
   (interactive)
   (let* (BUFFER-STRING
-         OUTPUT
+         CMD-OUTPUT
+         FILE-PATH
          (DEF-DIR (if (boundp 'DEF-DIR)
                       DEF-DIR
                     default-directory)))
@@ -25,12 +26,19 @@ under theme/default/layout/"
                    (string-match "new_post_name: " BUFFER-STRING))
               ;; call `hexo new` command
               (let ((default-directory DEF-DIR))
-                (setq OUTPUT (shell-command-to-string
-                              (concat "hexo new '"
-                                      (read-from-minibuffer
-                                       "Title of the new article: ") "'")))
-                (string-match "/.*\\.md$" OUTPUT)
-                (find-file (match-string 0 OUTPUT)))
+                (setq CMD-OUTPUT (shell-command-to-string
+                                  (format "hexo new '%s'"
+                                          (read-from-minibuffer "Article URI: "))))
+                (string-match "Created: \\(.+\\)$" CMD-OUTPUT)
+                (setq FILE-PATH (match-string 1 CMD-OUTPUT))
+                (find-file FILE-PATH)
+                (goto-char 0)
+                (when (y-or-n-p "Rename arcitle title? ")
+                  (replace-regexp
+                   "title: .+$"
+                   (format "title: \"%s\"" (read-from-minibuffer "Article Title: "))
+                   )
+                  (save-buffer)))
             (progn (setq DEF-DIR (file-truename (concat DEF-DIR "../")))
                    (hexo-new))))
       (progn
@@ -158,7 +166,7 @@ Please run this function in the article."
 ;;                                         ; split-string:
 ;;                                         ; ":year/:month/:day/:title/"
 ;;                                         ; => (":year" ":month" ":day" ":title" "")
-;; 
+;;
 ;;           )
 
 
