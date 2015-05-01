@@ -66,7 +66,7 @@ Please run this under _posts/ or _draft/ within Dired buffer."
                (if (and (not (string-match "#.+#$" current-file-name))
                         (not (string-match ".+~$" current-file-name))
                         (not (string-match "^\.\.?$" current-file-name))
-                  (string-match ".+\.md$" current-file-name))
+                        (string-match ".+\.md$" current-file-name))
                    (let (touch-cmd head)
                      (setq head
                            (shell-command-to-string
@@ -124,54 +124,66 @@ Please run this function in the article."
     (message "Please run this function in a markdown file. Action cancelled."))
    ((yes-or-no-p "This operation may *change the permanent link* of this article, continue? ")
     (save-excursion
-        (goto-char (point-min))
-        (save-match-data
-          (if (re-search-forward "^date: [0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\} [0-9]\\{2\\}:[0-9]\\{2\\}:[0-9]\\{2\\}" nil :no-error)
-              (let ((current-time (format-time-string "date: %Y-%m-%d %H:%M:%S")))
-                (replace-match current-time)
-                (save-buffer)
-                (message (concat "Date updated: " current-time)))
-            (message "Didn't find any time stamp in this article, abort.")))))
-    ))
+      (goto-char (point-min))
+      (save-match-data
+        (if (re-search-forward "^date: [0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\} [0-9]\\{2\\}:[0-9]\\{2\\}:[0-9]\\{2\\}" nil :no-error)
+            (let ((current-time (format-time-string "date: %Y-%m-%d %H:%M:%S")))
+              (replace-match current-time)
+              (save-buffer)
+              (message (concat "Date updated: " current-time)))
+          (message "Didn't find any time stamp in this article, abort.")))))
+   ))
 
-;; (defun hexo-insert-article-link ()
-;;   ;; permalink: :year/:month/:day/:title/
-;;   (let* ((config-file (file-truename (file-truename (concat default-directory "../../_config.yml"))))
-;;          permalink-format dest-file dest-date-list dest-formated-date)
-;;     (if (and (file-exists-p config-file))
-;;         (progn
-;;           (with-temp-buffer
-;;             (insert-file config-file)
-;;             (string-match "^permalink: \\(.+\\)" (buffer-string))
-;;             (setq permalink-format (match-string 1)))
-;;           (setq dest-file
-;;                 (completing-read "Select File: "
-;;                                  (directory-files "." nil "^[^#\.].*[^~]$") nil t))
-;;           (with-temp-buffer
-;;             (insert-file dest-file)
-;;             (save-match-data
-;;               (string-match "^date: \\([0-9]+\\).\\([0-9]+\\).\\([0-9]+\\)"
-;;                             (buffer-string))
-;;               (setq dest-date-list (list (match-string 1) (match-string 2) (match-string 3)))))
-;;           (setq dest-formated-date
-;;                 (mapconcat
-;;                  (lambda (x)
-;;                    (cond ((equal ":year" x) (elt dest-date-list 1))
-;;                          ((equal ":month" x) (elt dest-date-list 2))
-;;                          ((equal ":day" x) (elt dest-date-list 3))
-;;                          ((equal ":title" x) (replace-regexp-in-string "\.\\(md\\|org\\)$"))
-;;                          ))
-;;                  (split-string "" "/")
-;;                  "/")
-;;                                         ; split-string:
-;;                                         ; ":year/:month/:day/:title/"
-;;                                         ; => (":year" ":month" ":day" ":title" "")
-;;
-;;           )
+(defun hexo-insert-article-link ()
+  "Insert a link to other article in _posts/."
+  (interactive)
+  (if (or (not (member (file-name-nondirectory (directory-file-name default-directory))
+                       '("_posts" "_drafts")))
+          (not (eq major-mode 'markdown-mode)))
+      (message "Please run this command in any file under _posts/ or _drafts/")
 
+    (let* ((config-file (file-truename (file-truename (concat default-directory "../../_config.yml"))))
+           permalink-format article-file-name article-link original-article-title)
+      (if (and (file-exists-p config-file))
+          (progn
+            (setq article-file-name
+                  (ido-completing-read "Select Article: "
+                                       (mapcar
+                                        (lambda (x) (substring x 0 -3)) ;remove ".md$"
+                                        (directory-files "../_posts" nil "^[^#\.].*\\.md$")) nil t))
+            (with-temp-buffer
+              (insert-file config-file)
+              (string-match "^permalink: \\(.+\\)" (buffer-string))
+              (setq permalink-format (replace-regexp-in-string
+                                      ":year" "%Y"
+                                      (replace-regexp-in-string
+                                       ":month" "%m"
+                                       (replace-regexp-in-string
+                                        ":day" "%d"
+                                        (replace-regexp-in-string
+                                         ":title" article-file-name
+                                         (match-string 1 (buffer-string)))))))
+              (string-match "^root: \\(.+\\)" (buffer-string)) ;concat root
+              (setq permalink-format (concat (match-string 1 (buffer-string)) permalink-format)))
 
+            (with-temp-buffer
+              (insert-file-contents (format "../_posts/%s.md" article-file-name))
+              (string-match "^date: *\\([^ ].+$\\)" (buffer-string))
+              (message (match-string 1 (buffer-string)))
+              (setq article-link
+                    (format-time-string permalink-format
+                                        (apply #'encode-time
+                                               (parse-time-string (match-string 1 (buffer-string))))
+                                        ))
+              (string-match "^title: [\"']?\\(.+\\)[\"']? *$" (buffer-string))
+              (setq original-article-title (match-string 1 (buffer-string)))
+              )
 
+            (if (y-or-n-p (format "Use original article title \"%s\" ? " original-article-title))
+                (insert (format "[%s](%s)" original-article-title article-link))
+              (insert (format "[%s](%s)" (read-from-minibuffer "Title: ") article-link)))
+            )))))
 
 ;; [TODO] hexo-tag-remove, hexo-tag-add, hexo-tag-select-article
 
-(provide 'hexo)
+  (provide 'hexo)
