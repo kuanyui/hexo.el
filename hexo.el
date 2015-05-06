@@ -137,10 +137,14 @@ Please run this function in the article."
 (defun hexo-insert-article-link ()
   "Insert a link to other article in _posts/."
   (interactive)
-  (if (or (not (member (file-name-nondirectory (directory-file-name default-directory))
-                       '("_posts" "_drafts")))
-          (not (eq major-mode 'markdown-mode)))
-      (message "Please run this command in any file under _posts/ or _drafts/")
+  (if (or
+       (not (or                         ;if not exist "../_posts" directory
+             (mapcar (lambda (x)
+                       (and (file-directory-p (concat "../" x))
+                            (equal "_posts" x)))
+                     (directory-files "../"))))
+       (not (eq major-mode 'markdown-mode)))
+      (message "Please run this command in an article of a Hexo repository.")
 
     (let* ((config-file (file-truename (file-truename (concat default-directory "../../_config.yml"))))
            permalink-format article-file-name article-link original-article-title)
