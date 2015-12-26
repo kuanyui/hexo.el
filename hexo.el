@@ -48,6 +48,17 @@ under theme/default/layout/"
           (progn
             (message "Not in a hexo or its child directory.")))))))
 
+
+(defun hexo--head (file-path)
+  "get first 5 lines of a file as a string"
+  (with-temp-buffer
+    (insert-file-contents file-path)
+    (let ((lines (split-string (buffer-string) "\n" t)))
+      (if (>= (length lines) 5)
+          (mapconcat #'identity (loop for i from 0 to 4 collect (nth i lines)) "\n")
+        (buffer-string)
+        ))))
+
 ;;;###autoload
 (defun hexo-touch-files-in-dir-by-time ()
   "`touch' markdown article files according their \"date: \" to
@@ -57,35 +68,33 @@ Please run this under _posts/ or _draft/ within Dired buffer."
   (if (and (eq major-mode 'dired-mode)
            (or (equal (buffer-name) "_posts")
                (equal (buffer-name) "_draft")))
-      (progn
-        (let (current-file-name file-list)
-          (setq file-list (directory-files (dired-current-directory)))
-          (progn
-            (mapcar
-             (lambda (current-file-name)
-               (if (and (not (string-match "#.+#$" current-file-name))
-                        (not (string-match ".+~$" current-file-name))
-                        (not (string-match "^\.\.?$" current-file-name))
-                        (string-match ".+\.md$" current-file-name))
-                   (let (touch-cmd head)
-                     (setq head
-                           (shell-command-to-string
-                            (format "head -n 5 '%s'" current-file-name)))
-                     (save-match-data
-                       (string-match "^date: \\([0-9]+\\)-\\([0-9]+\\)-\\([0-9]+\\) \\([0-9]+\\):\\([0-9]+\\):\\([0-9]+\\)$" head)
-                       (setq touch-cmd
-                             (format "touch -t %s%s%s%s%s.%s %s"
-                                     (match-string 1 head)
-                                     (match-string 2 head)
-                                     (match-string 3 head)
-                                     (match-string 4 head)
-                                     (match-string 5 head)
-                                     (match-string 6 head)
-                                     current-file-name
-                                     )))
-                     (shell-command touch-cmd))
-                 ))
-             file-list))) ;; 這個file-list為lambda的arg
+      
+      (lexical-let (file-list touch-commands)
+        (setq file-list (directory-files (dired-current-directory)))
+        (progn
+          (mapcar
+           (lambda (current-file-name)
+             (if (and (not (string-match "#.+#$" current-file-name))
+                      (not (string-match ".+~$" current-file-name))
+                      (not (string-match "^\.\.?$" current-file-name))
+                      (string-match ".+\.md$" current-file-name))
+                 (lexical-let (touch-cmd head)
+                   (setq head (hexo--head current-file-name))
+                   (save-match-data
+                     (string-match "^date: \\([0-9]+\\)-\\([0-9]+\\)-\\([0-9]+\\) \\([0-9]+\\):\\([0-9]+\\):\\([0-9]+\\)$" head)
+                     (setq touch-cmd
+                           (format "touch -t %s%s%s%s%s.%s %s"
+                                   (match-string 1 head)
+                                   (match-string 2 head)
+                                   (match-string 3 head)
+                                   (match-string 4 head)
+                                   (match-string 5 head)
+                                   (match-string 6 head)
+                                   current-file-name)))
+                   (push touch-cmd touch-commands))
+               ))
+           file-list)) ;; 這個file-list為lambda的arg
+        (shell-command (mapconcat #'identity touch-commands ";"))
         (revert-buffer)
         (message "Done."))
     (message "Please run this under _posts/ or _drafts/ within Dired buffer.")))
