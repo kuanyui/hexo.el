@@ -3,6 +3,32 @@
 ;; License: WTFPL 1.0
 ;; Code:
 
+(defun hexo--find-command ()
+  (let ((root-dir (hexo--find-root-dir)))
+    (if root-dir
+        (format "%s/node_modules/hexo/bin/hexo" root-dir)
+      nil)))
+
+
+(defun hexo--find-root-dir (&optional current-path)
+  (let ((PWD (or current-path default-directory)))
+    (cond ((equal (file-truename PWD) "/")
+           nil)
+          ((and (file-exists-p (concat PWD "/_config.yml"))
+                (file-exists-p (concat PWD "/node_modules/")))
+           PWD)
+          (t
+           (hexo--find-root-dir (file-truename (concat PWD "../")))))))
+
+(defun hexo-run-shell-command (args-string)
+  "If not found hexo, return nil"
+  (if (executable-find "hexo")
+      (shell-command-to-string (concat "hexo" args-string))
+    (let ((hexo (hexo--find-command)))
+      (if hexo
+          (shell-command-to-string (concat hexo args-string))
+        nil))))
+
 ;;;###autoload
 (defun hexo-new ()
   "Call `hexo new` anywhere as long as in any child directory
@@ -10,44 +36,23 @@
 That's to say, you can use this function to create new post, even though
 under theme/default/layout/"
   (interactive)
-  (let* (BUFFER-STRING
-         CMD-OUTPUT
-         FILE-PATH
-         (DEF-DIR (if (boundp 'DEF-DIR)
-                      DEF-DIR
-                    default-directory)))
-    (if (file-exists-p (format "%s%s" DEF-DIR "_config.yml"))
-        (progn
-          (with-temp-buffer
-            (insert-file-contents (format "%s%s" DEF-DIR "_config.yml"))
-            (setq BUFFER-STRING (buffer-string)))
-          (if (and (string-match "title: " BUFFER-STRING)
-                   (string-match "url: " BUFFER-STRING)
-                   (string-match "new_post_name: " BUFFER-STRING))
-              ;; call `hexo new` command
-              (let ((default-directory DEF-DIR))
-                (setq CMD-OUTPUT (shell-command-to-string
-                                  (format "hexo new '%s'"
-                                          (read-from-minibuffer "Article URI: "))))
-                (string-match "Created: \\(.+\\)$" CMD-OUTPUT)
-                (setq FILE-PATH (match-string 1 CMD-OUTPUT))
-                (find-file FILE-PATH)
-                (goto-char 0)
-                (when (y-or-n-p "Rename arcitle title? ")
-                  (replace-regexp
-                   "title: .+$"
-                   (format "title: \"%s\"" (read-from-minibuffer "Article Title: "))
-                   )
-                  (save-buffer)))
-            (progn (setq DEF-DIR (file-truename (concat DEF-DIR "../")))
-                   (hexo-new))))
-      (progn
-        (if (not (equal DEF-DIR "/"))
-            (progn (setq DEF-DIR (file-truename (concat DEF-DIR "../")))
-                   (hexo-new))
-          (progn
-            (message "Not in a hexo or its child directory.")))))))
-
+  (let* (stdout
+         created-file
+         (hexo (hexo--find-command)))
+    (if (null hexo)
+        (message "Not found hexo in your $PATH nor node_modules/, or you're not under a hexo project's directory at all."))
+    (progn (setq stdout (shell-command-to-string
+                         (format "%s new '%s'"
+                                 hexo
+                                 (read-from-minibuffer "Article URI: "))))
+           (string-match "Created: \\(.+\\)$" stdout)
+           (setq created-file (match-string 1 stdout))
+           (find-file created-file)
+           (goto-char 0)
+           (when (y-or-n-p "Rename arcitle title? ")
+             (replace-regexp "title: .+$" (format "title: \"%s\""
+                                                  (read-from-minibuffer "Article Title: ")))
+             (save-buffer)))))
 
 (defun hexo--head (file-path)
   "get first 5 lines of a file as a string"
