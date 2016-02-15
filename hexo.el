@@ -3,12 +3,15 @@
 ;; License: WTFPL 1.0
 ;; Code:
 
-(defun hexo--find-command ()
-  (let ((root-dir (hexo--find-root-dir)))
-    (if root-dir
-        (format "%s/node_modules/hexo/bin/hexo" root-dir)
-      nil)))
 
+(defun hexo--find-command ()
+  "Try to find hexo in node_modules/ directory.
+If not found, try to `executable-find' hexo in your system."
+  (let* ((root-dir (hexo--find-root-dir))
+         (guessed-hexo (format "%s/node_modules/hexo/bin/hexo" root-dir)))
+    (if (and root-dir (file-exists-p guessed-hexo))
+        guessed-hexo
+      (executable-find "hexo"))))
 
 (defun hexo--find-root-dir (&optional current-path)
   (let ((PWD (or current-path default-directory)))
@@ -16,7 +19,7 @@
            nil)
           ((and (file-exists-p (concat PWD "/_config.yml"))
                 (file-exists-p (concat PWD "/node_modules/")))
-           PWD)
+           (directory-file-name PWD))   ;remove final slash of PWD
           (t
            (hexo--find-root-dir (file-truename (concat PWD "../")))))))
 
@@ -158,7 +161,7 @@ Please run this function in the article."
                             (equal "_posts" x)))
                      (directory-files "../"))))
        (not (eq major-mode 'markdown-mode)))
-      (message "Please run this command in an article of a Hexo repository.")
+      (message "Please run this command in hexo article buffer.")
 
     (let* ((config-file (file-truename (file-truename (concat default-directory "../../_config.yml"))))
            permalink-format article-file-name article-link original-article-title)
