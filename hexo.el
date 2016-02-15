@@ -3,17 +3,33 @@
 ;; License: WTFPL 1.0
 ;; Code:
 
+;; ======================================================
+;; Small tools
+;; ======================================================
 
-(defun hexo--find-command ()
+(defun hexo-get-file-head-lines (file-path &optional n)
+  "Get the first N lines of a file as a list."
+  (with-temp-buffer
+    (insert-file-contents file-path)
+    (let ((lines (split-string (buffer-string) "\n" t)))
+      (if (null n)
+          lines
+        (subseq lines 0 (1- n))))))
+
+(defun hexo-get-file-head-lines-as-string (file-path &optional n)
+  "Get first N lines of a file as a string."
+  (mapconcat #'identity (hexo-get-file-head-lines file-path n) "\n"))
+
+(defun hexo-find-command ()
   "Try to find hexo in node_modules/ directory.
 If not found, try to `executable-find' hexo in your system."
-  (let* ((root-dir (hexo--find-root-dir))
+  (let* ((root-dir (hexo-find-root-dir))
          (guessed-hexo (format "%s/node_modules/hexo/bin/hexo" root-dir)))
     (if (and root-dir (file-exists-p guessed-hexo))
         guessed-hexo
       (executable-find "hexo"))))
 
-(defun hexo--find-root-dir (&optional current-path)
+(defun hexo-find-root-dir (&optional current-path)
   (let ((PWD (or current-path default-directory)))
     (cond ((equal (file-truename PWD) "/")
            nil)
@@ -21,16 +37,30 @@ If not found, try to `executable-find' hexo in your system."
                 (file-exists-p (concat PWD "/node_modules/")))
            (directory-file-name PWD))   ;remove final slash of PWD
           (t
-           (hexo--find-root-dir (file-truename (concat PWD "../")))))))
+           (hexo-find-root-dir (file-truename (concat PWD "../")))))))
+
+(defun hexo-ask-for-root-dir ()
+  (let ((dir (hexo-find-root-dir (read-directory-name
+                                  "Please input the root path of an exist Hexo repository: "))))
+    (if dir
+        dir
+      (progn (message "Seems not a valid Hexo repository. Please try again.")
+             (sit-for 5)
+             (hexo-ask-for-root-dir)))))
+
 
 (defun hexo-run-shell-command (args-string)
   "If not found hexo, return nil"
   (if (executable-find "hexo")
       (shell-command-to-string (concat "hexo" args-string))
-    (let ((hexo (hexo--find-command)))
+    (let ((hexo (hexo-find-command)))
       (if hexo
           (shell-command-to-string (concat hexo args-string))
         nil))))
+
+;; ======================================================
+;; Commands
+;; ======================================================
 
 ;;;###autoload
 (defun hexo-new ()
@@ -41,7 +71,7 @@ under theme/default/layout/"
   (interactive)
   (let* (stdout
          created-file
-         (hexo (hexo--find-command)))
+         (hexo (hexo-find-command)))
     (if (null hexo)
         (message "Not found hexo in your $PATH nor node_modules/, or you're not under a hexo project's directory at all."))
     (progn (setq stdout (shell-command-to-string
@@ -57,18 +87,8 @@ under theme/default/layout/"
                                                   (read-from-minibuffer "Article Title: ")))
              (save-buffer)))))
 
-(defun hexo--head (file-path)
-  "get first 5 lines of a file as a string"
-  (with-temp-buffer
-    (insert-file-contents file-path)
-    (let ((lines (split-string (buffer-string) "\n" t)))
-      (if (>= (length lines) 5)
-          (mapconcat #'identity (loop for i from 0 to 4 collect (nth i lines)) "\n")
-        (buffer-string)
-        ))))
-
 ;;;###autoload
-(defun hexo-touch-files-in-dir-by-time ()
+(defun hexo-dired-touch-files-in-dir-by-time ()
   "`touch' markdown article files according their \"date: \" to
 make it easy to sort file according date in Dired.
 Please run this under _posts/ or _draft/ within Dired buffer."
@@ -87,7 +107,7 @@ Please run this under _posts/ or _draft/ within Dired buffer."
                       (not (string-match "^\.\.?$" current-file-name))
                       (string-match ".+\.md$" current-file-name))
                  (lexical-let (touch-cmd head)
-                   (setq head (hexo--head current-file-name))
+                   (setq head (hexo-get-file-head-lines-as-string current-file-name 5))
                    (save-match-data
                      (string-match "^date: \\([0-9]+\\)-\\([0-9]+\\)-\\([0-9]+\\) \\([0-9]+\\):\\([0-9]+\\):\\([0-9]+\\)$" head)
                      (setq touch-cmd
@@ -205,6 +225,134 @@ Please run this function in the article."
               (insert (format "[%s](%s)" (read-from-minibuffer "Title: ") article-link)))
             )))))
 
+;; ======================================================
+;; Article manager
+;; ======================================================
+(require 'tabulated-list)
+
+(defvar-local hexo-root-dir
+  "Root directory of a hexo-mode buffer")
+(put 'hexo-root-dir 'permanent-local t)
+
+(define-derived-mode hexo-mode tabulated-list-mode "Hexo"
+  "Major mode for manage Hexo articles."
+  (setq tabulated-list-format
+        `[("Status" 7 nil)
+          ("Filename" 48 nil)
+          ("Title" 48 nil)
+          ("Date"  12 nil)
+          ("Categories"  16 nil)
+          ("Tags"  0 nil)])
+  (setq tabulated-list-padding 2)
+  (setq tabulated-list-sort-key (cons "Title" nil))
+  (setq hexo-root-dir (or (hexo-find-root-dir)
+                          (hexo-ask-for-root-dir)))
+  (add-hook 'tabulated-list-revert-hook 'hexo-refresh nil t)
+  (tabulated-list-init-header))
+
+(defun hexo-refresh ()
+  ;; Each element in `tabulated-list-entries' is like:
+  ;; (nil ["test.md" "Title" "2013/10/24" "category" "tag, tag2"])
+  (setq tabulated-list-entries
+        (hexo-generate-list-entries hexo-root-dir)))
+
+(defun hexo-directory-files (dir-path)
+  "The same as `directory-files', but remove:
+0. all not .md files
+1. temporary files
+2. special files (e.g. '..')
+3. invalid files (e.g. a broken symbolic link)
+"
+  (remove-if (lambda (x) (or
+                      (not (file-exists-p x))
+                      (not (string-suffix-p ".md" x))
+                      (member (file-name-base x) '("." ".."))
+                      ;;(string-suffix-p "#" x) ;useless
+                      (string-suffix-p "~" x)))
+             (directory-files dir-path 'full)))
+
+(defun hexo-generate-list-entries (&optional repo-root-dir)
+  (let* ((root (or repo-root-dir hexo-root-dir))
+         (posts-dir (format "%s/source/_posts/" root))
+         (drafts-dir (format "%s/source/_drafts/" root)))
+    (mapcar #'hexo-generate-file-entry
+            (append (hexo-directory-files posts-dir)
+                    (hexo-directory-files drafts-dir)))))
+
+(defun hexo-remove (regexp string)
+  (replace-regexp-in-string regexp "" string t))
+
+(defun hexo-trim-quotes (string)
+  (hexo-remove "[\"']$" (hexo-remove "^[\"']" string)))
+
+(defun hexo-trim-spaces (string)
+  (hexo-remove " *$" (hexo-remove "^ *" string)))
+
+(defun hexo-trim (string)
+  (hexo-trim-quotes (hexo-trim-spaces string)))
+
+(defun hexo-parse-tags (string)
+  "Return a list containing tags"
+  (cond ((string-match "\\[\\(.+\\)\\]" string)
+         (let* ((raw (match-string 1 string)) ; "this", "is", "tag"
+                (raw (replace-regexp-in-string ", " "," raw 'fixedcase)))
+           (mapcar #'hexo-trim-quotes (split-string raw ","))))
+        ((string-match "^ *$" string)
+         '())
+        (t
+         (list (hexo-trim string)))))
+
+(defun hexo-generate-file-entry (file-path)
+  "Generate entry of a markdown FILE-PATH"
+  (let* ((lines (hexo-get-file-head-lines file-path 6))
+         (assoc-list
+          (remove-if #'null
+                     (mapcar (lambda (line)
+                               (cond ((string-match "^title: ?\\(.+\\)" line)
+                                      (cons 'title (hexo-trim (match-string 1 line))))
+                                     ((string-match "^date: ?\\([0-9].+\\) " line) ;hide time
+                                      (cons 'date (match-string 1 line)))
+                                     ((string-match "^tags: ?\\(.+\\)" line)
+                                      (cons 'tags (hexo-parse-tags (match-string 1 line))))
+                                     ((string-match "^categories: ?\\(.+\\)" line)
+                                      (cons 'categories (hexo-parse-tags (match-string 1 line))))
+                                     (t nil)))
+                             lines))))
+    (list nil
+          (vector
+           ;; status
+           (let ((dir (file-name-nondirectory
+                       (directory-file-name
+                        (file-name-directory file-path)))))
+             (if (equal dir "_posts") "posts" "drafts"))
+           ;; filename
+           (file-name-base file-path)
+           (cdr (assq 'title assoc-list))
+           (cdr (assq 'date assoc-list))
+           (mapconcat #'identity (cdr (assq 'categories assoc-list)) " ")
+           (mapconcat #'identity (cdr (assq 'tags assoc-list)) " ")
+           ))))
+
+(defun hexo-open-file ()
+  (interactive)
+  (message (format "%s" (tabulated-list-get-entry))))
+
+(defun hexo ()
+  (interactive)
+  (require 'finder-inf nil t)
+  (let* ((buf (get-buffer-create "*Hexo*"))
+         (win (get-buffer-window buf)))
+    (with-current-buffer buf
+      (hexo-mode))
+    (if win
+        (select-window win)
+      (switch-to-buffer buf))
+    (hexo-refresh)
+    (tabulated-list-print 'remember-pos)))
+
+
+;;a
+
 ;; [TODO] hexo-tag-remove, hexo-tag-add, hexo-tag-select-article
 
-  (provide 'hexo)
+(provide 'hexo)
