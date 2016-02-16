@@ -30,6 +30,7 @@ If not found, try to `executable-find' hexo in your system."
       (executable-find "hexo"))))
 
 (defun hexo-find-root-dir (&optional current-path)
+  "Try to find the root dir of a Hexo repository."
   (let ((PWD (or current-path default-directory)))
     (cond ((equal (file-truename PWD) "/")
            nil)
@@ -63,7 +64,7 @@ If not found, try to `executable-find' hexo in your system."
 ;; ======================================================
 (require 'tabulated-list)
 
-(defvar-local hexo-root-dir
+(defvar-local hexo-root-dir nil
   "Root directory of a hexo-mode buffer")
 (put 'hexo-root-dir 'permanent-local t)
 
@@ -192,7 +193,7 @@ If not found, try to `executable-find' hexo in your system."
 (defmacro please-in-hexo-buffer (&rest body)
   `(if (eq major-mode 'hexo-mode)
        (progn ,@body)
-     (message "Please run his command in hexo buffer (M-x hexo).")))
+     (message "Please run his command in `hexo-mode' buffer (M-x `hexo').")))
 
 (defun hexo-open-file ()
   (interactive)
@@ -202,6 +203,7 @@ If not found, try to `executable-find' hexo in your system."
 
 
 (define-key hexo-mode-map (kbd "RET") 'hexo-open-file)
+(define-key hexo-mode-map (kbd "n") 'hexo-new)
 
 ;; ======================================================
 ;; Universal Commands
@@ -217,60 +219,69 @@ under theme/default/layout/"
   (interactive)
   (let* (stdout
          created-file
-         (hexo (hexo-find-command)))
-    (if (null hexo)
-        (message "Not found hexo in your node_modules/ nor $PATH,\n or you're not under a hexo project's directory at all."))
-    (progn (setq stdout (shell-command-to-string
-                         (format "%s new '%s'"
-                                 hexo
-                                 (read-from-minibuffer "Article URI: "))))
-           (string-match "Created: \\(.+\\)$" stdout)
-           (setq created-file (match-string 1 stdout))
-           (find-file created-file)
-           (goto-char 0)
-           (when (y-or-n-p "Rename arcitle title? ")
-             (replace-regexp "title: .+$" (format "title: \"%s\""
-                                                  (read-from-minibuffer "Article Title: ")))
-             (save-buffer)))))
+         (hexo-command (hexo-find-command)))
+    (cond ((and (eq major-mode 'hexo-mode) hexo-root-dir) ; in hexo-mode
+           (cd hexo-root-dir)
+           (hexo--new-interactively hexo-command))
+          ((not (hexo-find-root-dir))                     ; not in a hexo repo
+           (message "You should run this command under a Hexo repo, or in a hexo-mode buffer"))
+          ((null hexo-command)                            ; not found hexo command
+           (message "Not found hexo command in your node_modules/ nor $PATH,"))
+          (t (hexo--new-interactively hexo-command)))))
+
+(defun hexo--new-interactively (hexo-command)
+  (let (stdout created-file)
+    (setq stdout (shell-command-to-string
+                  (format "%s new '%s'"
+                          hexo-command
+                          (read-from-minibuffer "Article URI: "))))
+    (string-match "Created: \\(.+\\)$" stdout)
+    (setq created-file (match-string 1 stdout))
+    (find-file created-file)
+    (goto-char 0)
+    (when (y-or-n-p "Rename arcitle title? ")
+      (replace-regexp "title: .+$" (format "title: \"%s\""
+                                           (read-from-minibuffer "Article Title: ")))
+      (save-buffer))))
 
 ;;;###autoload
-(defun hexo-dired-touch-files-in-dir-by-time ()
-  "`touch' markdown article files according their \"date: \" to
+  (defun hexo-dired-touch-files-in-dir-by-time ()
+    "`touch' markdown article files according their \"date: \" to
 make it easy to sort file according date in Dired.
 Please run this under _posts/ or _draft/ within Dired buffer."
-  (interactive)
-  (if (and (eq major-mode 'dired-mode)
-           (or (equal (buffer-name) "_posts")
-               (equal (buffer-name) "_draft")))
-      (lexical-let (file-list touch-commands)
-        (setq file-list (directory-files (dired-current-directory)))
-        (progn
-          (mapcar
-           (lambda (current-file-name)
-             (if (and (not (string-match "#.+#$" current-file-name))
-                      (not (string-match ".+~$" current-file-name))
-                      (not (string-match "^\.\.?$" current-file-name))
-                      (string-match ".+\.md$" current-file-name))
-                 (lexical-let (touch-cmd head)
-                   (setq head (hexo-get-file-head-lines-as-string current-file-name 5))
-                   (save-match-data
-                     (string-match "^date: \\([0-9]+\\)-\\([0-9]+\\)-\\([0-9]+\\) \\([0-9]+\\):\\([0-9]+\\):\\([0-9]+\\)$" head)
-                     (setq touch-cmd
-                           (format "touch -t %s%s%s%s%s.%s %s"
-                                   (match-string 1 head)
-                                   (match-string 2 head)
-                                   (match-string 3 head)
-                                   (match-string 4 head)
-                                   (match-string 5 head)
-                                   (match-string 6 head)
-                                   current-file-name)))
-                   (push touch-cmd touch-commands))
-               ))
-           file-list)) ;; 這個file-list為lambda的arg
-        (shell-command (mapconcat #'identity touch-commands ";"))
-        (revert-buffer)
-        (message "Done."))
-    (message "Please run this under _posts/ or _drafts/ within Dired buffer.")))
+    (interactive)
+    (if (and (eq major-mode 'dired-mode)
+             (or (equal (buffer-name) "_posts")
+                 (equal (buffer-name) "_draft")))
+        (lexical-let (file-list touch-commands)
+          (setq file-list (directory-files (dired-current-directory)))
+          (progn
+            (mapcar
+             (lambda (current-file-name)
+               (if (and (not (string-match "#.+#$" current-file-name))
+                        (not (string-match ".+~$" current-file-name))
+                        (not (string-match "^\.\.?$" current-file-name))
+                        (string-match ".+\.md$" current-file-name))
+                   (lexical-let (touch-cmd head)
+                     (setq head (hexo-get-file-head-lines-as-string current-file-name 5))
+                     (save-match-data
+                       (string-match "^date: \\([0-9]+\\)-\\([0-9]+\\)-\\([0-9]+\\) \\([0-9]+\\):\\([0-9]+\\):\\([0-9]+\\)$" head)
+                       (setq touch-cmd
+                             (format "touch -t %s%s%s%s%s.%s %s"
+                                     (match-string 1 head)
+                                     (match-string 2 head)
+                                     (match-string 3 head)
+                                     (match-string 4 head)
+                                     (match-string 5 head)
+                                     (match-string 6 head)
+                                     current-file-name)))
+                     (push touch-cmd touch-commands))
+                 ))
+             file-list)) ;; 這個file-list為lambda的arg
+          (shell-command (mapconcat #'identity touch-commands ";"))
+          (revert-buffer)
+          (message "Done."))
+      (message "Please run this under _posts/ or _drafts/ within Dired buffer.")))
 
 
 ;;;###autoload
