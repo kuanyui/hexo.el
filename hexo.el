@@ -72,7 +72,7 @@ If not found, try to `executable-find' hexo in your system."
   "Major mode for manage Hexo articles."
   (hl-line-mode 1)
   (setq tabulated-list-format
-        `[("Status" 7 nil)
+        `[("Status" 6 nil)
           ("Filename" 48 nil)
           ("Title" 48 nil)
           ("Date"  12 nil)
@@ -161,10 +161,7 @@ If not found, try to `executable-find' hexo in your system."
     (list file-path
           (vector
            ;; status
-           (let ((dir (file-name-nondirectory
-                       (directory-file-name
-                        (file-name-directory file-path)))))
-             (if (equal dir "_posts") "posts" "drafts"))
+           (if (equal (hexo-get-article-parent-dir-name file-path) "_posts") "post" "draft")
            ;; filename
            (file-name-base file-path)
            (cdr (assq 'title assoc-list))
@@ -173,7 +170,11 @@ If not found, try to `executable-find' hexo in your system."
            (mapconcat #'identity (cdr (assq 'tags assoc-list)) " ")
            ))))
 
-
+(defun hexo-get-article-parent-dir-name (file-path)
+  "Return _posts or _drafts"
+  (file-name-nondirectory
+   (directory-file-name
+    (file-name-directory file-path))))
 
 (defun hexo ()
   (interactive)
@@ -248,8 +249,6 @@ under theme/default/layout/"
                                            (read-from-minibuffer "Article Title: ")))
       (save-buffer))))
 
-
-
 ;;;###autoload
 (defun hexo-touch-files-in-dir-by-time ()
   "`touch' markdown article files according their \"date: \" to
@@ -274,29 +273,38 @@ make it easy to sort file according date in Dired or `hexo-mode'."
       (revert-buffer)
       (message "Done."))))
 
-
 ;;;###autoload
 (defun hexo-move-article ()
   "Move current file between _post and _draft;
 You can run this function in dired or a hexo article."
   (interactive)
-  (if (string-match "/\\(_posts/\\|_drafts/\\)$" default-directory)
-      (let* ((parent-dir (file-truename (concat default-directory "../")))
-             (dest-dir (if (string-match "_drafts/$" default-directory) "_posts/" "_drafts/")))
-        (cond ((eq major-mode 'markdown-mode)
-               (let* ((cur-file (buffer-file-name))
-                      (new-file (concat parent-dir dest-dir (buffer-name))))
-                 (save-buffer)
-                 (kill-buffer)
-                 (rename-file cur-file new-file)
-                 (find-file new-file)
-                 (message (format "Now in %s" dest-dir))))
-              ((eq major-mode 'dired-mode)
-               (dired-rename-file (dired-get-filename nil)
-                                  (concat parent-dir dest-dir (dired-get-filename t))
-                                  nil)
-               (message (format "The article has been moved to %s" dest-dir)))))
-    (message "You have to run this in a hexo article buffer or dired")))
+  (cond ((and (eq major-mode 'hexo-mode) hexo-root-dir)
+         (hexo--move-article (tabulated-list-get-id)))
+        ((and (eq major-mode 'markdown-mode)
+              (hexo-find-root-dir))
+         (hexo--move-article (buffer-file-name)))
+        ((and (eq major-mode 'dired-mode)
+              (hexo-find-root-dir)
+              (string-suffix-p ".md" (dired-get-file-for-visit))
+              (member (hexo-get-article-parent-dir-name (dired-get-file-for-visit)) '("_posts" "_drafts")))
+         (hexo--move-article (dired-get-file-for-visit)))
+        (t
+         (message "You can only run this command in either:
+1. The buffer of an article
+2. Hexo-mode
+3. Dired-mode (remember to move your cursor onto a valid .md file first)"))))
+
+(defun hexo--move-article (file-path)
+  "Move file between _posts and _drafts"
+  (let* ((from (hexo-get-article-parent-dir-name file-path))
+         (to (if (string= from "_posts") "_drafts" "_posts"))
+         (to-path (format "%s/source/%s/%s"
+                          (hexo-find-root-dir file-path) to (file-name-nondirectory file-path))))
+    (if (file-exists-p to-path)
+        (message (format "A file with the same name has existed in %s, please rename and try again." to))
+      (progn (rename-file file-path to-path)
+             (message (format "Moved to %s." to))))))
+
 
 ;;;###autoload
 (defun hexo-update-current-article-date ()
