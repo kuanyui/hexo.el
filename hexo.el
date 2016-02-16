@@ -108,12 +108,16 @@ If not found, try to `executable-find' hexo in your system."
              (directory-files dir-path 'full)))
 
 (defun hexo-generate-list-entries (&optional repo-root-dir)
-  (let* ((root (or repo-root-dir hexo-root-dir))
+  (mapcar #'hexo-generate-file-entry
+          (hexo-get-all-article-files repo-root-dir)))
+
+(defun hexo-get-all-article-files (&optional repo-root-dir)
+  "Return a files list containing full-paths of all articles."
+  (let* ((root (or repo-root-dir hexo-root-dir (hexo-find-root-dir)))
          (posts-dir (format "%s/source/_posts/" root))
          (drafts-dir (format "%s/source/_drafts/" root)))
-    (mapcar #'hexo-generate-file-entry
-            (append (hexo-directory-files posts-dir)
-                    (hexo-directory-files drafts-dir)))))
+    (append (hexo-directory-files posts-dir)
+            (hexo-directory-files drafts-dir))))
 
 (defun hexo-remove (regexp string)
   (replace-regexp-in-string regexp "" string t))
@@ -244,44 +248,31 @@ under theme/default/layout/"
                                            (read-from-minibuffer "Article Title: ")))
       (save-buffer))))
 
+
+
 ;;;###autoload
-  (defun hexo-dired-touch-files-in-dir-by-time ()
-    "`touch' markdown article files according their \"date: \" to
-make it easy to sort file according date in Dired.
-Please run this under _posts/ or _draft/ within Dired buffer."
-    (interactive)
-    (if (and (eq major-mode 'dired-mode)
-             (or (equal (buffer-name) "_posts")
-                 (equal (buffer-name) "_draft")))
-        (lexical-let (file-list touch-commands)
-          (setq file-list (directory-files (dired-current-directory)))
-          (progn
-            (mapcar
-             (lambda (current-file-name)
-               (if (and (not (string-match "#.+#$" current-file-name))
-                        (not (string-match ".+~$" current-file-name))
-                        (not (string-match "^\.\.?$" current-file-name))
-                        (string-match ".+\.md$" current-file-name))
-                   (lexical-let (touch-cmd head)
-                     (setq head (hexo-get-file-head-lines-as-string current-file-name 5))
-                     (save-match-data
-                       (string-match "^date: \\([0-9]+\\)-\\([0-9]+\\)-\\([0-9]+\\) \\([0-9]+\\):\\([0-9]+\\):\\([0-9]+\\)$" head)
-                       (setq touch-cmd
-                             (format "touch -t %s%s%s%s%s.%s %s"
-                                     (match-string 1 head)
-                                     (match-string 2 head)
-                                     (match-string 3 head)
-                                     (match-string 4 head)
-                                     (match-string 5 head)
-                                     (match-string 6 head)
-                                     current-file-name)))
-                     (push touch-cmd touch-commands))
-                 ))
-             file-list)) ;; 這個file-list為lambda的arg
-          (shell-command (mapconcat #'identity touch-commands ";"))
-          (revert-buffer)
-          (message "Done."))
-      (message "Please run this under _posts/ or _drafts/ within Dired buffer.")))
+(defun hexo-touch-files-in-dir-by-time ()
+  "`touch' markdown article files according their \"date: \" to
+make it easy to sort file according date in Dired or `hexo-mode'."
+  (interactive)
+  (if (not (hexo-find-root-dir))
+      (message "Please run this command under a hexo repository.")
+    (let ((touch-commands-list (mapcar (lambda (file)
+                                         (let ((head (hexo-get-file-head-lines-as-string file 5)))
+                                           (if (string-match "^date: \\([0-9]+\\)-\\([0-9]+\\)-\\([0-9]+\\) \\([0-9]+\\):\\([0-9]+\\):\\([0-9]+\\)$" head)
+                                               (format "touch -t %s%s%s%s%s.%s %s"
+                                                       (match-string 1 head)
+                                                       (match-string 2 head)
+                                                       (match-string 3 head)
+                                                       (match-string 4 head)
+                                                       (match-string 5 head)
+                                                       (match-string 6 head)
+                                                       file)
+                                             " ")))    ;If not found "date: ", return an empty command
+                                       (hexo-get-all-article-files))))
+      (shell-command (mapconcat #'identity touch-commands-list ";"))
+      (revert-buffer)
+      (message "Done."))))
 
 
 ;;;###autoload
