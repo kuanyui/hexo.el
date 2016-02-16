@@ -109,15 +109,18 @@ If not found, try to `executable-find' hexo in your system."
 
 (defun hexo-generate-list-entries (&optional repo-root-dir)
   (mapcar #'hexo-generate-file-entry
-          (hexo-get-all-article-files repo-root-dir)))
+          (hexo-get-all-article-files repo-root-dir 'include-drafts)))
 
-(defun hexo-get-all-article-files (&optional repo-root-dir)
+(defun hexo-get-all-article-files (&optional repo-root-dir include-drafts)
   "Return a files list containing full-paths of all articles."
-  (let* ((root (or repo-root-dir hexo-root-dir (hexo-find-root-dir)))
+  (let* ((root (or (hexo-find-root-dir repo-root-dir)
+                   hexo-root-dir
+                   (hexo-find-root-dir)))
          (posts-dir (format "%s/source/_posts/" root))
          (drafts-dir (format "%s/source/_drafts/" root)))
     (append (hexo-directory-files posts-dir)
-            (hexo-directory-files drafts-dir))))
+            (if include-drafts (hexo-directory-files drafts-dir) '()))
+    ))
 
 (defun hexo-remove (regexp string)
   (replace-regexp-in-string regexp "" string t))
@@ -142,32 +145,40 @@ If not found, try to `executable-find' hexo in your system."
         (t
          (list (hexo-trim string)))))
 
+(defun hexo-get-article-info (file-path)
+  "Return a list:
+'((title . title)
+  (date . date)
+  (tags . (tags ...))
+  (categories . (categories ...)))"
+  (let ((head-lines (hexo-get-file-head-lines file-path 6)))
+    (remove-if
+     #'null
+     (mapcar (lambda (line)
+               (cond ((string-match "^title: ?\\(.+\\)" line)
+                      (cons 'title (hexo-trim (match-string 1 line))))
+                     ((string-match "^date: ?\\([0-9].+\\) " line) ;hide time
+                      (cons 'date (match-string 1 line)))
+                     ((string-match "^tags: ?\\(.+\\)" line)
+                      (cons 'tags (hexo-parse-tags (match-string 1 line))))
+                     ((string-match "^categories: ?\\(.+\\)" line)
+                      (cons 'categories (hexo-parse-tags (match-string 1 line))))
+                     (t nil)))
+             head-lines))))
+
 (defun hexo-generate-file-entry (file-path)
   "Generate entry of a markdown FILE-PATH"
-  (let* ((lines (hexo-get-file-head-lines file-path 6))
-         (assoc-list
-          (remove-if #'null
-                     (mapcar (lambda (line)
-                               (cond ((string-match "^title: ?\\(.+\\)" line)
-                                      (cons 'title (hexo-trim (match-string 1 line))))
-                                     ((string-match "^date: ?\\([0-9].+\\) " line) ;hide time
-                                      (cons 'date (match-string 1 line)))
-                                     ((string-match "^tags: ?\\(.+\\)" line)
-                                      (cons 'tags (hexo-parse-tags (match-string 1 line))))
-                                     ((string-match "^categories: ?\\(.+\\)" line)
-                                      (cons 'categories (hexo-parse-tags (match-string 1 line))))
-                                     (t nil)))
-                             lines))))
+  (let ((info (hexo-get-article-info file-path)))
     (list file-path
           (vector
            ;; status
            (if (equal (hexo-get-article-parent-dir-name file-path) "_posts") "post" "draft")
            ;; filename
            (file-name-base file-path)
-           (cdr (assq 'title assoc-list))
-           (cdr (assq 'date assoc-list))
-           (mapconcat #'identity (cdr (assq 'categories assoc-list)) " ")
-           (mapconcat #'identity (cdr (assq 'tags assoc-list)) " ")
+           (cdr (assq 'title info))
+           (cdr (assq 'date info))
+           (mapconcat #'identity (cdr (assq 'categories info)) " ")
+           (mapconcat #'identity (cdr (assq 'tags info)) " ")
            ))))
 
 (defun hexo-get-article-parent-dir-name (file-path)
@@ -177,6 +188,7 @@ If not found, try to `executable-find' hexo in your system."
     (file-name-directory file-path))))
 
 (defun hexo ()
+  "Open Hexo-mode buffer"
   (interactive)
   (require 'finder-inf nil t)
   (let* ((buf (get-buffer-create "*Hexo*"))
@@ -326,61 +338,76 @@ Please run this function in the article."
           (message "Didn't find any time stamp in this article, abort.")))))
    ))
 
+
+(defun hexo-get-permalink-format (&optional root-or-file-path)
+  "Return permalink format string. ex: %Y/%m/%d/%s"
+  (let ((config-file (format "%s/_config.yml" (hexo-find-root-dir root-or-file-path))))
+    (with-temp-buffer
+      (insert-file config-file)
+      (string-match "^permalink: \\(.+\\)" (buffer-string))
+      (setq permalink-format (replace-regexp-in-string
+                              ":year" "%Y"
+                              (replace-regexp-in-string
+                               ":month" "%m"
+                               (replace-regexp-in-string
+                                ":day" "%d"
+                                (match-string 1 (buffer-string))))))
+      (string-match "^root: \\(.+\\)" (buffer-string)) ;concat root
+      (concat (match-string 1 (buffer-string)) permalink-format))))
+
+(defun hexo-get-article-title-and-permalink (file-path)
+  "return a dotted pair (TITLE . PERMALINK)"
+  (let* ((head (hexo-get-file-head-lines-as-string file-path 5))
+         (date (progn (string-match "date:\\(.+\\)" head)
+                      (hexo-trim (match-string 1 head))))
+         (title (progn (string-match "title:\\(.+\\)" head)
+                       (hexo-trim (match-string 1 head)))))
+    (cons title
+          (replace-regexp-in-string ":title" (file-name-base file-path)
+                                    (format-time-string (hexo-get-permalink-format file-path)
+                                                        (apply #'encode-time (parse-time-string date)))))))
+
+(defun hexo-completing-read-post (&optional repo-root-dir)
+  "Use `ido-completing-read' to read filename in _posts/.
+Return absolute path of the article file."
+  (format "%s/source/_posts/%s.md"
+          (hexo-find-root-dir repo-root-dir)
+          (ido-completing-read
+           "Select Article: "
+           (mapcar #'file-name-base (hexo-get-all-article-files repo-root-dir nil)) ;not include drafts
+           nil t)))
+
+(defun hexo-get-article-title (file-path)
+  (let ((head (hexo-get-file-head-lines-as-string file-path 3)))
+    (string-match "title:\\(.+\\)" head)
+    (hexo-trim (match-string 1 head))))
+
+
+
 ;;;###autoload
 (defun hexo-insert-article-link ()
   "Insert a link to other article in _posts/."
   (interactive)
-  (if (or
-       (not (or                         ;if not exist "../_posts" directory
-             (mapcar (lambda (x)
-                       (and (file-directory-p (concat "../" x))
-                            (equal "_posts" x)))
-                     (directory-files "../"))))
-       (not (eq major-mode 'markdown-mode)))
-      (message "Please run this command in hexo article buffer.")
+  (if (or (not (eq major-mode 'markdown-mode))
+          (not (hexo-find-root-dir))
+          (not (member (hexo-get-article-parent-dir (buffer-file-name)) '("_posts" "_drafts"))))
+      (message "This command only usable in a hexo article buffer (markdown).")
+    (let* ((file-path (hexo-completing-read-post))
+           (title+permalink (hexo-get-article-title-and-permalink file-path))
+           (title (car title+permalink))
+           (permalink (cdr title+permalink))
+           )
+      (insert (format "[%s](%s)"
+                      (if (y-or-n-p (format "Use original article title \"%s\" ? " title))
+                          title
+                        (read-from-minibuffer "Title: "))
+                      permalink)))))
 
-    (let* ((config-file (file-truename (file-truename (concat default-directory "../../_config.yml"))))
-           permalink-format article-file-name article-link original-article-title)
-      (if (and (file-exists-p config-file))
-          (progn
-            (setq article-file-name
-                  (ido-completing-read "Select Article: "
-                                       (mapcar
-                                        (lambda (x) (substring x 0 -3)) ;remove ".md$"
-                                        (directory-files "../_posts" nil "^[^#\.].*\\.md$")) nil t))
-            (with-temp-buffer
-              (insert-file config-file)
-              (string-match "^permalink: \\(.+\\)" (buffer-string))
-              (setq permalink-format (replace-regexp-in-string
-                                      ":year" "%Y"
-                                      (replace-regexp-in-string
-                                       ":month" "%m"
-                                       (replace-regexp-in-string
-                                        ":day" "%d"
-                                        (replace-regexp-in-string
-                                         ":title" article-file-name
-                                         (match-string 1 (buffer-string)))))))
-              (string-match "^root: \\(.+\\)" (buffer-string)) ;concat root
-              (setq permalink-format (concat (match-string 1 (buffer-string)) permalink-format)))
-
-            (with-temp-buffer
-              (insert-file-contents (format "../_posts/%s.md" article-file-name))
-              (string-match "^date: *\\([^ ].+$\\)" (buffer-string))
-              (message (match-string 1 (buffer-string)))
-              (setq article-link
-                    (format-time-string permalink-format
-                                        (apply #'encode-time
-                                               (parse-time-string (match-string 1 (buffer-string))))
-                                        ))
-              (string-match "^title: [\"']?\\(.+\\)[\"']? *$" (buffer-string))
-              (setq original-article-title (match-string 1 (buffer-string)))
-              )
-
-            (if (y-or-n-p (format "Use original article title \"%s\" ? " original-article-title))
-                (insert (format "[%s](%s)" original-article-title article-link))
-              (insert (format "[%s](%s)" (read-from-minibuffer "Title: ") article-link)))
-            )))))
-
+(defun hexo-follow-post-link ()
+  "`find-file' a link like this:
+  [Link](/2015/08/19/coscup-2015/)"
+  (interactive)
+  )
 
 ;; [TODO] hexo-tag-remove, hexo-tag-add, hexo-tag-select-article
 
