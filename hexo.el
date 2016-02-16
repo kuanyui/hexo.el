@@ -84,9 +84,9 @@ If not found, try to `executable-find' hexo in your system."
   (tabulated-list-init-header))
 
 (defun hexo-refresh ()
-  ;; Each element in `tabulated-list-entries' is like:
-  ;; (FileFullPath ["test.md" "Title" "2013/10/24" "category" "tag, tag2"])
-  ;; ^ id           ^ entry
+  "Each element in `tabulated-list-entries' is like:
+  (FileFullPath [\"test.md\" \"Title\" \"2013/10/24\" \"category\" \"tag, tag2\"])
+  ^ id           ^ entry"
   (setq tabulated-list-entries
         (hexo-generate-list-entries hexo-root-dir)))
 
@@ -191,7 +191,8 @@ If not found, try to `executable-find' hexo in your system."
   (require 'finder-inf nil t)
   (let* ((buf (get-buffer-create "*Hexo*"))
          (win (get-buffer-window buf))
-         (--hexo-root (hexo-find-root-dir default-directory)))
+         (--hexo-root (or hexo-root-dir ;if already under `hexo-mode', this var must be non-nil
+                          (hexo-find-root-dir default-directory))))
     (if --hexo-root   ;When calling `hexo', under a hexo repo
         (with-current-buffer buf
           (setq hexo-root-dir --hexo-root)
