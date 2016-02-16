@@ -80,8 +80,6 @@ If not found, try to `executable-find' hexo in your system."
           ("Tags"  0 nil)])
   (setq tabulated-list-padding 2)
   (setq tabulated-list-sort-key (cons "Title" nil))
-  (setq hexo-root-dir (or (hexo-find-root-dir)
-                          (hexo-ask-for-root-dir)))
   (add-hook 'tabulated-list-revert-hook 'hexo-refresh nil t)
   (tabulated-list-init-header))
 
@@ -192,9 +190,15 @@ If not found, try to `executable-find' hexo in your system."
   (interactive)
   (require 'finder-inf nil t)
   (let* ((buf (get-buffer-create "*Hexo*"))
-         (win (get-buffer-window buf)))
-    (with-current-buffer buf
-      (hexo-mode))
+         (win (get-buffer-window buf))
+         (--hexo-root (hexo-find-root-dir default-directory)))
+    (if --hexo-root   ;When calling `hexo', under a hexo repo
+        (with-current-buffer buf
+          (setq hexo-root-dir --hexo-root)
+          (hexo-mode))
+      (with-current-buffer buf          ;not under a hexo repo
+        (setq hexo-root-dir (hexo-ask-for-root-dir))
+        (hexo-mode)))
     (if win
         (select-window win)
       (switch-to-buffer buf))
