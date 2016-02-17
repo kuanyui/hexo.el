@@ -333,7 +333,11 @@ KEY is a downcased symbol. <ex> 'status "
 (define-key hexo-mode-map (kbd "<f2>") 'hexo/rename-file)
 (define-key hexo-mode-map (kbd "h") 'hexo/help)
 (define-key hexo-mode-map (kbd "?") 'hexo/help)
-(define-key hexo-mode-map (kbd "s") 'tabulated-list-sort)
+(define-key hexo-mode-map (kbd "S") 'tabulated-list-sort)
+(define-key hexo-mode-map (kbd "s") nil)
+(define-key hexo-mode-map (kbd "s r") 'hexo:run-server)
+(define-key hexo-mode-map (kbd "s s") 'hexo:stop-server)
+(define-key hexo-mode-map (kbd "s d") 'hexo:deploy)
 (define-key hexo-mode-map (kbd "Q") 'kill-buffer-and-window)
 
 (defun hexo/help ()
@@ -341,10 +345,10 @@ KEY is a downcased symbol. <ex> 'status "
   (hexo-buffer-only
    (let* ((help-str (concat
                      (propertize
-                      "File              View               Edit                 Mode\n" 'face 'header-line)
-                     "[RET] Open        [  g] Refresh      [t t] Touch time     [  ?] Show this help\n"
-                     "[SPC] Show Info   [  s] Sort         [t s] Toggle status  [  Q] Quit\n"
-                     "[  N] New         [  f] Filter tag   [t a] Edit Tags\n"
+                      "File             View              Edit                 Server             Mode\n" 'face 'header-line)
+                     "[RET] Open       [  g] Refresh     [t t] Touch time     [s r] Run server   [  ?] Show this help\n"
+                     "[SPC] Show Info  [  s] Sort        [t s] Toggle status  [s s] Stop server  [  Q] Quit\n"
+                     "[  N] New        [  f] Filter tag  [t a] Edit Tags      [s d] Deploy\n"
                      "[  R] Rename"))
           (help-str-without-brackets (replace-regexp-in-string "[][]" " " help-str 'fixedcase)))
      (mapc (lambda (begin-end)

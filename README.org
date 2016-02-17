@@ -29,6 +29,10 @@ The following commands are available in =markdown-mode=, =dired-mode=, =hexo-mod
 | =hexo-new=                        | Create new post anywhere.                                                  |
 | =hexo-move-article=               | Move article between =_post/= and =_draft/=.                               |
 | =hexo-touch-files-in-dir-by-time= | Touch all files by their timestamp to make files sortable in file-manager. |
+|-----------------------------------+----------------------------------------------------------------------------|
+| =hexo:run-server=                 | Open Hexo server process (posts only / posts + drafts)                     |
+| =hexo:stop-server=                | Stop Hexo server process                                                   |
+| =hexo:deploy=                     | Deploy                                                                     |
 
 ** Commands for Markdown
 
@@ -56,7 +60,7 @@ The following commands & key-bindings are available in =hexo-mode=.
 | View                              |             |                                                                            |
 |-----------------------------------+-------------+----------------------------------------------------------------------------|
 | =revert-buffer=                   | =g=         | Refresh                                                                    |
-| =tabulated-lis-sort=              | =s=         | Sort according to this column header                                       |
+| =tabulated-list-sort=             | =S=         | Sort according to this column header                                       |
 | =hexo/filter-tag=                 | =f=         | Filter by tag                                                              |
 |-----------------------------------+-------------+----------------------------------------------------------------------------|
 | Edit                              |             |                                                                            |
@@ -64,6 +68,12 @@ The following commands & key-bindings are available in =hexo-mode=.
 | =hexo-toggle-article-status=      | =t s=       | Move file between =_posts/= and =_drafts/=                                 |
 | =hexo-touch-files-in-dir-by-time= | =t t=       | Touch all files by their timestamp to make files sortable in file-manager. |
 | =hexo/tags-edit=                  | =t a=       | Add / Remove tags                                                          |
+|-----------------------------------+-------------+----------------------------------------------------------------------------|
+| Server                            |             |                                                                            |
+|-----------------------------------+-------------+----------------------------------------------------------------------------|
+| =hexo:run-server=                 | =s r=       | Open Hexo server process (posts only / posts + drafts)                |
+| =hexo:stop-server=                | =s s=       | Stop Hexo server process                                                   |
+| =hexo:deploy=                     | =s d=       | Deploy                                                                     |
 |-----------------------------------+-------------+----------------------------------------------------------------------------|
 | Mode                              |             |                                                                            |
 |-----------------------------------+-------------+----------------------------------------------------------------------------|
