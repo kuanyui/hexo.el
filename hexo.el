@@ -752,11 +752,9 @@ This is only resonable for files in _posts/."
   (async-shell-command (hexo-replace-hexo-command-to-path command-string repo-path)
                        hexo-process-buffer-name)
   (setq hexo-process (get-buffer-process hexo-process-buffer-name))
+  (set-process-filter hexo-process 'comint-output-filter)
   (pop-to-buffer hexo-process-buffer-name))
 
-;;(term-send-string )
-;;(shell (get-buffer-create "*Hexo process*"))
-;;(process-send-string (get-buffer-process "my-shell-buf") (concat cmd "\n"))
 
 (defun hexo-replace-hexo-command-to-path (command-string &optional repo-path)
   "Replace all 'hexo' in COMMAND-STRING to hexo command's path"
