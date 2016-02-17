@@ -749,10 +749,9 @@ This is only resonable for files in _posts/."
 \"hexo clean;hexo generate;hexo server --debug\""
   (if (process-live-p hexo-process)
       (kill-process hexo-process))
-  (setq hexo-process (start-process-shell-command
-                      "hexo-process"
-                      hexo-process-buffer-name
-                      (hexo-replace-hexo-command-to-path command-string repo-path)))
+  (async-shell-command (hexo-replace-hexo-command-to-path command-string repo-path)
+                       hexo-process-buffer-name)
+  (setq hexo-process (get-buffer-process hexo-process-buffer-name))
   ;; [SHIT] Why no ANSI color?! Why?!
   (set-process-filter hexo-process (lambda (process string)
                                      (with-current-buffer (process-buffer process)
