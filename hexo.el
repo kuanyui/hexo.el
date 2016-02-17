@@ -156,8 +156,8 @@ If not found, try to `executable-find' hexo in your system."
           ("Date"  12 t)
           ("Categories"  16 t)
           ("Tags"  0 t)])
+  (setq tabulated-list-sort-key '("Date" . t))
   (setq tabulated-list-padding 2)
-  (setq tabulated-list-sort-key (cons "Title" nil))
   (add-hook 'tabulated-list-revert-hook 'hexo-refresh nil t)
   (tabulated-list-init-header))
 
@@ -312,6 +312,7 @@ KEY is a downcased symbol. <ex> 'status "
     (delete-other-windows)
     (tabulated-list-print 'remember-pos)))
 
+(with-current-buffer "*Hexo*" tabulated-list-sort-key)
 
 
 ;; ======================================================
