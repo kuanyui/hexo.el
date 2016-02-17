@@ -214,6 +214,7 @@ Key is a downcased symbol. <ex> 'status "
         (select-window win)
       (switch-to-buffer buf))
     (hexo-refresh)
+    (delete-other-windows)
     (tabulated-list-print 'remember-pos)))
 
 
@@ -262,6 +263,7 @@ Key is a downcased symbol. <ex> 'status "
 (define-key hexo-mode-map (kbd "r") 'hexo-rename-file)
 (define-key hexo-mode-map (kbd "h") 'hexo-help)
 (define-key hexo-mode-map (kbd "?") 'hexo-help)
+(define-key hexo-mode-map (kbd "Q") 'kill-buffer-and-window)
 
 ;; ======================================================
 ;; Universal Commands
