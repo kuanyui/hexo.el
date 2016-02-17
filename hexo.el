@@ -71,6 +71,15 @@
                                     (propertize (format "%s" arg) 'face 'font-lock-keyword-face))
                                   args)))
 
+(defun hexo-get-file-content-as-string (file-path)
+  (with-temp-buffer
+    (insert-file file-path)
+    (buffer-string)))
+
+(defun hexo-write-file (file-path string)
+  "Overwrite the whole file content to STRING."
+  (with-temp-file file-path (insert string)))
+
 (defun hexo-get-file-head-lines (file-path &optional n)
   "Get the first N lines of a file as a list."
   (with-temp-buffer
@@ -389,15 +398,6 @@ SUBEXP-DEPTH is 0 by default."
      (hexo-write-file file-path new-file-content)
      (revert-buffer)
      (message "Done!"))))
-
-(defun hexo-get-file-content-as-string (file-path)
-  (with-temp-buffer
-    (insert-file file-path)
-    (buffer-string)))
-
-(defun hexo-write-file (file-path string)
-  "Overwrite the whole file content to STRING."
-  (with-temp-file file-path (insert string)))
 
 (defun hexo-get-all-tags (&optional root-dir)
   (hexo-sort-string-list
