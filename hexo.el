@@ -5,6 +5,7 @@
 
 
 (require 'cl)
+(require 'tabulated-list)
 
 (defgroup hexo nil
   "Manage Hexo with Emacs"
@@ -13,6 +14,10 @@
 (defgroup hexo-faces nil
   "Faces used in `hexo-mode'"
   :group 'hexo :group 'faces)
+
+(defvar-local hexo-root-dir nil
+  "Root directory of a hexo-mode buffer")
+(put 'hexo-root-dir 'permanent-local t)
 
 ;; ======================================================
 ;; Faces
@@ -32,13 +37,13 @@
 
 (defface hexo-tag
   '((((class color) (background light)) (:foreground "#005f87" :background "#afd7ff"))
-    (((class color) (background dark)) (:foreground "#87dfff" :background "#4e4e4e")))
+    (((class color) (background dark)) (:foreground "#87dfff" :background "#3a3a3a":underline t)))
   ""
   :group 'hexo-faces)
 
 (defface hexo-category
   '((((class color) (background light)) (:foreground "#6c0099" :background "#ffd5e5"))
-    (((class color) (background dark)) (:foreground "#ff7bbb" :background "#4e4e4e")))
+    (((class color) (background dark)) (:foreground "#d18aff" :background "#3a3a3a" :underline t)))
   ""
   :group 'hexo-faces)
 
@@ -127,11 +132,6 @@ If not found, try to `executable-find' hexo in your system."
 ;; ======================================================
 ;; Article manager
 ;; ======================================================
-(require 'tabulated-list)
-
-(defvar-local hexo-root-dir nil
-  "Root directory of a hexo-mode buffer")
-(put 'hexo-root-dir 'permanent-local t)
 
 (define-derived-mode hexo-mode tabulated-list-mode "Hexo"
   "Major mode for manage Hexo articles."
@@ -317,16 +317,17 @@ KEY is a downcased symbol. <ex> 'status "
   (interactive)
   (hexo-buffer-only
    (let* ((help-str (concat
-                     "[  N] new           [  o] open     [  s] sort         [  g] refresh\n"
-                     "[t s] toggle-status [  R] rename   [t a] tags editor  [t t] touch-time\n"
-                     "[  Q] quit          [  ?] help"))
+                     "[  N] New           [  o] Open        [  s] Sort         [  g] Refresh\n"
+                     "[t s] Toggle status [  R] Rename      [t a] Tags editor  [t t] Touch time\n"
+                     "[  Q] Quit          [  ?] Help"))
           (help-str-without-brackets (replace-regexp-in-string "[][]" " " help-str 'fixedcase)))
      (mapc (lambda (begin-end)
-             (add-face-text-property (car begin-end) (cdr begin-end) '(face 'hexo-status-post) t help-str-without-brackets))
+             (add-face-text-property (car begin-end)
+                                     (cdr begin-end)
+                                     '(face 'hexo-status-post)
+                                     t help-str-without-brackets))
            (hexo-string-match-positions "\\(\\[.+?\\]\\)" help-str 1)) ;all position
      (message help-str-without-brackets))))
-
-
 
 (defun hexo-string-match-positions (regexp string &optional subexp-depth)
   "Get all matched REGEXP position in a STRING.
@@ -691,6 +692,5 @@ This is only resonable for files in _posts/."
             (hexo-find-root-dir repo-root-dir)
             filename-without-ext)))
 
-;; [TODO] hexo-tag-remove, hexo-tag-add, hexo-tag-select-article
 
 (provide 'hexo)
