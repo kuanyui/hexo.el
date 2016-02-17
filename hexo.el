@@ -5,6 +5,8 @@
 
 (require 'cl)
 (require 'tabulated-list)
+(require 'ido)
+(require 'ansi-color)
 
 (defgroup hexo nil
   "Manage Hexo with Emacs"
@@ -314,9 +316,6 @@ KEY is a downcased symbol. <ex> 'status "
     (hexo-refresh)
     (delete-other-windows)
     (tabulated-list-print 'remember-pos)))
-
-(with-current-buffer "*Hexo*" tabulated-list-sort-key)
-
 
 ;; ======================================================
 ;; Commands for hexo-mode only
@@ -748,7 +747,14 @@ This is only resonable for files in _posts/."
                        "hexo-process"
                        "*Hexo process*"
                        (hexo-replace-hexo-command-to-path command-string repo-path)))
+  (set-process-filter hexo--process (lambda (process string)
+                                      (with-current-buffer (process-buffer process)
+                                        (insert (ansi-color-apply string)))))
   (pop-to-buffer "*Hexo process*"))
+
+;;(term-send-string )
+;;(shell (get-buffer-create "*Hexo process*"))
+;;(process-send-string (get-buffer-process "my-shell-buf") (concat cmd "\n"))
 
 (defun hexo-replace-hexo-command-to-path (command-string &optional repo-path)
   "Replace all 'hexo' in COMMAND-STRING to hexo command's path"
@@ -770,9 +776,11 @@ This is only resonable for files in _posts/."
   (hexo-repo-only
    (hexo-start-process-shell-command "hexo clean;hexo generate;hexo deploy")))
 
-(defun hexo:kill-server ()
+(defun hexo:stop-server ()
   (interactive)
   (if (process-live-p hexo--process)
-      (kill-process hexo--process)))
+      (progn (kill-process hexo--process)
+             (message "Server stopped ~!"))
+    (message "No active server found")))
 
 (provide 'hexo)
