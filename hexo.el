@@ -347,7 +347,7 @@ KEY is a downcased symbol. <ex> 'status "
                      (propertize
                       "File             View              Edit                 Server             Mode\n" 'face 'header-line)
                      "[RET] Open       [  g] Refresh     [t t] Touch time     [s r] Run server   [  ?] Show this help\n"
-                     "[SPC] Show Info  [  s] Sort        [t s] Toggle status  [s s] Stop server  [  Q] Quit\n"
+                     "[SPC] Show Info  [  S] Sort        [t s] Toggle status  [s s] Stop server  [  Q] Quit\n"
                      "[  N] New        [  f] Filter tag  [t a] Edit Tags      [s d] Deploy\n"
                      "[  R] Rename"))
           (help-str-without-brackets (replace-regexp-in-string "[][]" " " help-str 'fixedcase)))
