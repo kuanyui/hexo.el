@@ -143,7 +143,7 @@ If not found, try to `executable-find' hexo in your system."
   (remove-duplicates string-list :test #'string=))
 
 ;; ======================================================
-;; Article manager
+;; Main
 ;; ======================================================
 
 (define-derived-mode hexo-mode tabulated-list-mode "Hexo"
@@ -203,14 +203,14 @@ FILTER is a function with one arg."
             (if include-drafts (hexo-directory-files drafts-dir) '()))
     ))
 
-(defun hexo-remove (regexp string)
+(defun hexo-remove-regexp (regexp string)
   (replace-regexp-in-string regexp "" string t))
 
 (defun hexo-trim-quotes (string)
-  (hexo-remove "[\"']$" (hexo-remove "^[\"']" string)))
+  (hexo-remove-regexp "[\"']$" (hexo-remove-regexp "^[\"']" string)))
 
 (defun hexo-trim-spaces (string)
-  (hexo-remove " *$" (hexo-remove "^ *" string)))
+  (hexo-remove-regexp " *$" (hexo-remove-regexp "^ *" string)))
 
 (defun hexo-trim (string)
   (hexo-trim-quotes (hexo-trim-spaces string)))
