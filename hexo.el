@@ -390,7 +390,12 @@ You can run this function in dired or a hexo article."
          (hexo--toggle-article-status (tabulated-list-get-id)))
         ((and (eq major-mode 'markdown-mode)
               (hexo-find-root-dir))
-         (hexo--toggle-article-status (buffer-file-name)))
+         (let ((new-path (hexo--toggle-article-status (buffer-file-name))))
+           (if new-path
+               (progn (find-alternate-file new-path)
+                      (message "Now this file is in '%s'"
+                               (hexo-get-article-parent-dir-name new-path)))
+             (message "Two filenames duplicated in _posts/ and _drafts/. Abort."))))
         ((and (eq major-mode 'dired-mode)
               (hexo-find-root-dir)
               (string-suffix-p ".md" (dired-get-file-for-visit))
@@ -403,15 +408,19 @@ You can run this function in dired or a hexo article."
 3. Dired-mode (remember to move your cursor onto a valid .md file first)"))))
 
 (defun hexo--toggle-article-status (file-path)
-  "Move file (`rename-file') between _posts and _drafts"
+  "Move file (`rename-file') between _posts and _drafts.
+If success, return the new file path, else nil."
   (let* ((from (hexo-get-article-parent-dir-name file-path))
          (to (if (string= from "_posts") "_drafts" "_posts"))
          (to-path (format "%s/source/%s/%s"
                           (hexo-find-root-dir file-path) to (file-name-nondirectory file-path))))
     (if (file-exists-p to-path)
-        (message (format "A file with the same name has existed in %s, please rename and try again." to))
-      (progn (rename-file file-path to-path)
-             (message (format "Moved to %s." to))))))
+        (prog1 nil
+          (message (format "A file with the same name has existed in %s, please rename and try again." to)))
+      (prog1 to-path
+        (rename-file file-path to-path)
+        (message (format "Now article '%s' is in '%s'" (file-name-base to-path) to))
+        ))))
 
 
 ;; ======================================================
