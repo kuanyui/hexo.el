@@ -1,0 +1,90 @@
+* hexo.el
+Emacs major-mode & tools for [[https://github.com/hexojs/hexo][Hexo]]. σ(´∀｀*)
+
+* Screenshots
+[[file:screenshots/screenshot_1.png]]
+
+[[file:screenshots/screenshot_2.png]]
+
+* Requirement
+- hexo
+- Emacs >= 24.3
+
+* Install
+
+* Usage
+=M-x hexo= to use =hexo-mode=.
+
+** Common Commands
+
+The following commands are available in =markdown-mode=, =dired-mode=, =hexo-mode= 
+
+| Command                           | Description                                                                |
+|-----------------------------------+----------------------------------------------------------------------------|
+| =hexo-new=                        | Create new post anywhere.                                                  |
+| =hexo-move-article=               | Move article between =_post/= and =_draft/=.                               |
+| =hexo-touch-files-in-dir-by-time= | Touch all files by their timestamp to make files sortable in file-manager. |
+
+** Commands for Markdown
+
+The following commands are only available in =markdown-mode=
+
+| Command                            | Description                                                                        |
+|------------------------------------+------------------------------------------------------------------------------------|
+| =hexo-insert-article-link=         | Insert a link to specific article in =_posts/=.                                    |
+| =hexo-update-current-article-date= | Update article's date stamp by current time. *This may change its permanent link!* |
+
+** Commands for =hexo-mode=
+
+The following commands & key-bindings are available in =hexo-mode=.
+
+| Command                           | Key         | Description                                                                |
+|-----------------------------------+-------------+----------------------------------------------------------------------------|
+| File                              |             |                                                                            |
+|-----------------------------------+-------------+----------------------------------------------------------------------------|
+| =hexo/open-file=                  | =RET=       | Open file                                                                  |
+| =hexo/show-article-info=          | =SPC=       | Show article info                                                          |
+| =hexo-new=                        | =n=         | Create file                                                                |
+| =hexo/rename-file=                | =R=, =[f2]= | Rename file                                                                |
+|-----------------------------------+-------------+----------------------------------------------------------------------------|
+| View                              |             |                                                                            |
+|-----------------------------------+-------------+----------------------------------------------------------------------------|
+| =revert-buffer=                   | =g=         | Refresh                                                                    |
+| =tabulated-lis-sort=              | =s=         | Sort according to this column header                                       |
+| =hexo/filter-tag=                 | =f=         | Filter by tag                                                              |
+|-----------------------------------+-------------+----------------------------------------------------------------------------|
+| Edit                              |             |                                                                            |
+|-----------------------------------+-------------+----------------------------------------------------------------------------|
+| =hexo-toggle-article-status=      | =t s=       | Move file between =_posts/= and =_drafts/=                                 |
+| =hexo-touch-files-in-dir-by-time= | =t t=       | Touch all files by their timestamp to make files sortable in file-manager. |
+| =hexo/tags-edit=                  | =t a=       | Add / Remove tags                                                          |
+|-----------------------------------+-------------+----------------------------------------------------------------------------|
+| Mode                              |             |                                                                            |
+|-----------------------------------+-------------+----------------------------------------------------------------------------|
+| =hexo/help=                       | =h=, =?=    | Show key-binding cheat sheet                                               |
+| =kill-buffer-and-window=          | =Q=         | Quit                                                                       |
+
+
+* License
+MIT
+
+Copyright (c) 2014-2016 ono hiroko (kuanyui)
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files (the
+"Software"), to deal in the Software without restriction, including
+without limitation the rights to use, copy, modify, merge, publish,
+distribute, sublicense, and/or sell copies of the Software, and to
+permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+
+The above copyright notice and this permission notice shall be
+included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.

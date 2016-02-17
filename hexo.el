@@ -1,8 +1,7 @@
-;; hexo.el - Utilities which make Hexo + Emacs more convenient.
+;; hexo.el - Major mode & tools for Hexo
 ;; Author: kuanyui <azazabc123@gmail.com>
-;; License: WTFPL 1.0
+;; License: MIT
 ;; Code:
-
 
 (require 'cl)
 (require 'tabulated-list)
@@ -340,9 +339,10 @@ KEY is a downcased symbol. <ex> 'status "
    (let* ((help-str (concat
                      (propertize
                       "File              View               Edit                 Mode\n" 'face 'header-line)
-                     "[  N] New         [  g] Refresh      [t t] Touch time     [  ?] Show this help\n"
-                     "[  o] Open        [  s] Sort         [t s] Toggle status  [  Q] Quit\n"
-                     "[  R] Rename      [  f] Filter tag   [t a] Edit Tags"))
+                     "[RET] Open        [  g] Refresh      [t t] Touch time     [  ?] Show this help\n"
+                     "[SPC] Show Info   [  s] Sort         [t s] Toggle status  [  Q] Quit\n"
+                     "[  N] New         [  f] Filter tag   [t a] Edit Tags\n"
+                     "[  R] Rename"))
           (help-str-without-brackets (replace-regexp-in-string "[][]" " " help-str 'fixedcase)))
      (mapc (lambda (begin-end)
              (add-face-text-property (car begin-end)
