@@ -604,7 +604,7 @@ Return absolute path of the article file."
   (interactive)
   (if (or (not (eq major-mode 'markdown-mode))
           (not (hexo-find-root-dir))
-          (not (member (hexo-get-article-parent-dir (buffer-file-name)) '("_posts" "_drafts"))))
+          (not (member (hexo-get-article-parent-dir-name (buffer-file-name)) '("_posts" "_drafts"))))
       (message "This command only usable in a hexo article buffer (markdown).")
     (let* ((file-path (hexo-completing-read-post))
            (title+permalink (hexo-get-article-title-and-permalink file-path))
