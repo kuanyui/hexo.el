@@ -85,7 +85,7 @@ If not found, try to `executable-find' hexo in your system."
 
 (defun hexo-refresh ()
   "Each element in `tabulated-list-entries' is like:
-  (FileFullPath [\"test.md\" \"Title\" \"2013/10/24\" \"category\" \"tag, tag2\"])
+  (FileFullPath [\"post\" \"test.md\" \"Title\" \"2013/10/24\" \"category\" \"tag, tag2\"])
   ^ id           ^ entry"
   (setq tabulated-list-entries
         (hexo-generate-list-entries hexo-root-dir)))
@@ -179,6 +179,16 @@ If not found, try to `executable-find' hexo in your system."
            (mapconcat #'identity (cdr (assq 'tags info)) " ")
            ))))
 
+(defun hexo-get-attribute-in-file-entry (key file-entry)
+  "Entry struct defined in `tabulated-list-format'.
+<ex> [(\"Status\" 6 nil) (\"Filename\" 48 nil) (\"Title\" 48 nil)]
+Key is a downcased symbol. <ex> 'status "
+  (let ((pos (position key tabulated-list-format
+                       :test (lambda (ele lst)
+                               (equal (capitalize (symbol-name ele))
+                                      (car lst))))))
+    (nth pos file-entry)))
+
 (defun hexo-get-article-parent-dir-name (file-path)
   "Return _posts or _drafts"
   (file-name-nondirectory
@@ -212,20 +222,43 @@ If not found, try to `executable-find' hexo in your system."
 ;; Commands for hexo-mode
 ;; ======================================================
 
-(defmacro please-in-hexo-buffer (&rest body)
+(defmacro hexo-buffer-only (&rest body)
   `(if (eq major-mode 'hexo-mode)
        (progn ,@body)
      (message "Please run his command in `hexo-mode' buffer (M-x `hexo').")))
 
 (defun hexo-open-file ()
   (interactive)
-  (please-in-hexo-buffer
+  (hexo-buffer-only
    (find-file (tabulated-list-get-id))))
 
+(defun hexo-rename-file (&optional init-value)
+  (interactive)
+  (hexo-buffer-only
+   (let* ((original-file-path (tabulated-list-get-id))
+          (pwd (file-name-directory original-file-path))
+          (original-name-without-ext (or init-value (file-name-base original-file-path)))
+          (new-name-without-ext (read-from-minibuffer
+                                 (format "Rename '%s' to: " original-name-without-ext)
+                                 original-name-without-ext))
+          (new-file-path (format "%s/%s.md" pwd new-name-without-ext)))
+     (if (file-exists-p new-file-path)
+         (progn (message "Filename '%s' already existed. Please try another name." new-name-without-ext)
+                (sit-for 5)
+                (hexo-rename-file new-name-without-ext))
+       (progn (rename-file original-file-path new-file-path)
+              (message "Rename successful!"))))))
 
+(defun hexo-help ()
+  (interactive)
+  (message (concat "[o] open  [s] sort           [g] refresh  [T] edit tags\n"
+                   "[N] new   [S] toggle-status  [R] rename   [t] touch-time\n"
+                   "[Q] quit  [?] help")))
 
 (define-key hexo-mode-map (kbd "RET") 'hexo-open-file)
 (define-key hexo-mode-map (kbd "n") 'hexo-new)
+(define-key hexo-mode-map (kbd "t") 'hexo-toggle-article-status)
+(define-key hexo-mode-map (kbd "r") 'hexo-rename-file)
 
 ;; ======================================================
 ;; Universal Commands
@@ -253,8 +286,8 @@ under theme/default/layout/"
 
 (defun hexo--new-interactively (hexo-command)
   (let (stdout created-file)
-    (setq stdout (shell-command-to-string
-                  (format "%s new '%s'"
+    (format "%s new '%s'"
+            (setq stdout (shell-command-to-string
                           hexo-command
                           (read-from-minibuffer "Article URI: "))))
     (string-match "Created: \\(.+\\)$" stdout)
@@ -291,27 +324,27 @@ make it easy to sort file according date in Dired or `hexo-mode'."
       (message "Done."))))
 
 ;;;###autoload
-(defun hexo-move-article ()
+(defun hexo-toggle-article-status ()
   "Move current file between _post and _draft;
 You can run this function in dired or a hexo article."
   (interactive)
   (cond ((and (eq major-mode 'hexo-mode) hexo-root-dir)
-         (hexo--move-article (tabulated-list-get-id)))
+         (hexo--toggle-article-status (tabulated-list-get-id)))
         ((and (eq major-mode 'markdown-mode)
               (hexo-find-root-dir))
-         (hexo--move-article (buffer-file-name)))
+         (hexo--toggle-article-status (buffer-file-name)))
         ((and (eq major-mode 'dired-mode)
               (hexo-find-root-dir)
               (string-suffix-p ".md" (dired-get-file-for-visit))
               (member (hexo-get-article-parent-dir-name (dired-get-file-for-visit)) '("_posts" "_drafts")))
-         (hexo--move-article (dired-get-file-for-visit)))
+         (hexo--toggle-article-status (dired-get-file-for-visit)))
         (t
          (message "You can only run this command in either:
 1. The buffer of an article
 2. Hexo-mode
 3. Dired-mode (remember to move your cursor onto a valid .md file first)"))))
 
-(defun hexo--move-article (file-path)
+(defun hexo--toggle-article-status (file-path)
   "Move file between _posts and _drafts"
   (let* ((from (hexo-get-article-parent-dir-name file-path))
          (to (if (string= from "_posts") "_drafts" "_posts"))
