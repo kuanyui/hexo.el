@@ -257,7 +257,7 @@ In `tabulated-list-mode', use `tabulated-list-get-id' and
            (propertize (cdr (assq 'title info)) 'face 'hexo-title)
            (propertize (cdr (assq 'date info)) 'face 'hexo-date)
            (mapconcat (lambda (x) (propertize x 'face 'hexo-category))
-                      (cdr (assq 'categories info)) " ")
+                      (cdr (assq 'categories info)) "/")
            (mapconcat (lambda (x) (propertize x 'face 'hexo-tag))
                       (hexo-sort-string-list (cdr (assq 'tags info))) " ")
            ))))
@@ -315,7 +315,7 @@ KEY is a downcased symbol. <ex> 'status "
 (define-key hexo-mode-map (kbd "t") nil)
 (define-key hexo-mode-map (kbd "t s") 'hexo-toggle-article-status)
 (define-key hexo-mode-map (kbd "t t") 'hexo-touch-files-in-dir-by-time)
-(define-key hexo-mode-map (kbd "t a") 'hexo/edit-tags)
+(define-key hexo-mode-map (kbd "t a") 'hexo/tags-edit)
 (define-key hexo-mode-map (kbd "R") 'hexo/rename-file)
 (define-key hexo-mode-map (kbd "<f2>") 'hexo/rename-file)
 (define-key hexo-mode-map (kbd "h") 'hexo/help)
@@ -380,7 +380,7 @@ SUBEXP-DEPTH is 0 by default."
               (search-forward new-name-without-ext)
               (message "Rename successful!"))))))
 
-(defun hexo/edit-tags ()
+(defun hexo/tags-edit ()
   (interactive)
   (hexo-buffer-only
    (let* ((file-path (tabulated-list-get-id))
