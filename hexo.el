@@ -300,6 +300,26 @@ KEY is a downcased symbol. <ex> 'status "
 ;; Commands for hexo-mode only
 ;; ======================================================
 
+(define-key hexo-mode-map (kbd "RET") 'hexo/open-file)
+(define-key hexo-mode-map (kbd "SPC") 'hexo/show-article-info)
+(define-key hexo-mode-map (kbd "n") 'hexo-new)
+(define-key hexo-mode-map (kbd "t") nil)
+(define-key hexo-mode-map (kbd "t s") 'hexo-toggle-article-status)
+(define-key hexo-mode-map (kbd "t t") 'hexo-touch-files-in-dir-by-time)
+(define-key hexo-mode-map (kbd "t a") 'hexo/edit-tags)
+(define-key hexo-mode-map (kbd "R") 'hexo/rename-file)
+(define-key hexo-mode-map (kbd "<f2>") 'hexo/rename-file)
+(define-key hexo-mode-map (kbd "h") 'hexo/help)
+(define-key hexo-mode-map (kbd "?") 'hexo/help)
+(define-key hexo-mode-map (kbd "Q") 'kill-buffer-and-window)
+
+(defun hexo/help ()
+  (interactive)
+  (hexo-buffer-only
+   (message (concat "[o] open  [s] sort           [g] refresh\n"
+                    "[N] new   [S] toggle-status  [R] rename   [t] edit tags  [T] touch-time\n"
+                    "[Q] quit  [?] help"))))
+
 (defmacro hexo-buffer-only (&rest body)
   `(if (eq major-mode 'hexo-mode)
        (progn ,@body)
@@ -328,13 +348,6 @@ KEY is a downcased symbol. <ex> 'status "
               (revert-buffer)
               (search-forward new-name-without-ext)
               (message "Rename successful!"))))))
-
-(defun hexo/help ()
-  (interactive)
-  (hexo-buffer-only
-   (message (concat "[o] open  [s] sort           [g] refresh\n"
-                    "[N] new   [S] toggle-status  [R] rename   [t] edit tags  [T] touch-time\n"
-                    "[Q] quit  [?] help"))))
 
 (defun hexo/edit-tags ()
   (interactive)
@@ -416,18 +429,6 @@ KEY is a downcased symbol. <ex> 'status "
       "\n"
       ))))
 
-(define-key hexo-mode-map (kbd "RET") 'hexo/open-file)
-(define-key hexo-mode-map (kbd "SPC") 'hexo/show-article-info)
-(define-key hexo-mode-map (kbd "n") 'hexo-new)
-(define-key hexo-mode-map (kbd "t") nil)
-(define-key hexo-mode-map (kbd "t s") 'hexo-toggle-article-status)
-(define-key hexo-mode-map (kbd "t t") 'hexo-touch-files-in-dir-by-time)
-(define-key hexo-mode-map (kbd "t a") 'hexo/edit-tags)
-(define-key hexo-mode-map (kbd "R") 'hexo/rename-file)
-(define-key hexo-mode-map (kbd "<f2>") 'hexo/rename-file)
-(define-key hexo-mode-map (kbd "h") 'hexo/help)
-(define-key hexo-mode-map (kbd "?") 'hexo/help)
-(define-key hexo-mode-map (kbd "Q") 'kill-buffer-and-window)
 
 ;; ======================================================
 ;; Universal Commands
