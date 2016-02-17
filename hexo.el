@@ -127,7 +127,7 @@ If not found, try to `executable-find' hexo in your system."
   (hl-line-mode 1)
   (setq tabulated-list-format
         `[("Status" 6 nil)
-          ("Filename" 48 nil)
+          ("Filename" 20 nil)
           ("Title" 48 nil)
           ("Date"  12 nil)
           ("Categories"  16 nil)
@@ -306,6 +306,8 @@ Key is a downcased symbol. <ex> 'status "
                 (sit-for 5)
                 (hexo-rename-file new-name-without-ext))
        (progn (rename-file original-file-path new-file-path)
+              (revert-buffer)
+              (search-forward new-name-without-ext)
               (message "Rename successful!"))))))
 
 (defun hexo/help ()
@@ -330,7 +332,9 @@ Key is a downcased symbol. <ex> 'status "
                               (re-search-forward "tags:.*" nil t)
                               (replace-match (format "tags: %s" formatted-new-tags-list))
                               (buffer-string))))
-     (hexo-write-file file-path new-file-content))))
+     (hexo-write-file file-path new-file-content)
+     (revert-buffer)
+     (message "Done!"))))
 
 (defun hexo-get-file-content-as-string (file-path)
   (with-temp-buffer
@@ -367,9 +371,12 @@ Key is a downcased symbol. <ex> 'status "
 
 (define-key hexo-mode-map (kbd "RET") 'hexo/open-file)
 (define-key hexo-mode-map (kbd "n") 'hexo-new)
-(define-key hexo-mode-map (kbd "S") 'hexo-toggle-article-status)
-(define-key hexo-mode-map (kbd "T") 'hexo-touch-files-in-dir-by-time)
-(define-key hexo-mode-map (kbd "r") 'hexo/rename-file)
+(define-key hexo-mode-map (kbd "t") nil)
+(define-key hexo-mode-map (kbd "t s") 'hexo-toggle-article-status)
+(define-key hexo-mode-map (kbd "t t") 'hexo-touch-files-in-dir-by-time)
+(define-key hexo-mode-map (kbd "t a") 'hexo/edit-tags)
+(define-key hexo-mode-map (kbd "R") 'hexo/rename-file)
+(define-key hexo-mode-map (kbd "<f2>") 'hexo/rename-file)
 (define-key hexo-mode-map (kbd "h") 'hexo/help)
 (define-key hexo-mode-map (kbd "?") 'hexo/help)
 (define-key hexo-mode-map (kbd "Q") 'kill-buffer-and-window)
@@ -439,7 +446,12 @@ make it easy to sort file according date in Dired or `hexo-mode'."
 You can run this function in dired or a hexo article."
   (interactive)
   (cond ((and (eq major-mode 'hexo-mode) hexo-root-dir)
-         (hexo--toggle-article-status (tabulated-list-get-id)))
+         (let* ((file-path (tabulated-list-get-id))
+                (file-name (file-name-base file-path)))
+           (if (hexo--toggle-article-status file-path)
+               (progn (tabulated-list-revert)
+                      (search-forward file-name nil t))
+             (message "Two filenames duplicated in _posts/ and _drafts/. Abort."))))
         ((and (eq major-mode 'markdown-mode)
               (hexo-find-root-dir))
          (let ((new-path (hexo--toggle-article-status (buffer-file-name))))
