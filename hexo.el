@@ -338,10 +338,10 @@ KEY is a downcased symbol. <ex> 'status "
   (hexo-buffer-only
    (let* ((help-str (concat
                      (propertize
-                      "File           View              Edit                 Mode\n" 'face 'header-line)
-                     "[  N] New      [  g] Refresh     [t t] Touch time     [  ?] Help\n"
-                     "[  o] Open     [  s] Sort        [t s] Toggle status  [  Q] Quit\n"
-                     "[  R] Rename   [  f] Filter tag  [t a] Edit Tags\n"))
+                      "File              View               Edit                 Mode\n" 'face 'header-line)
+                     "[  N] New         [  g] Refresh      [t t] Touch time     [  ?] Show this help\n"
+                     "[  o] Open        [  s] Sort         [t s] Toggle status  [  Q] Quit\n"
+                     "[  R] Rename      [  f] Filter tag   [t a] Edit Tags"))
           (help-str-without-brackets (replace-regexp-in-string "[][]" " " help-str 'fixedcase)))
      (mapc (lambda (begin-end)
              (add-face-text-property (car begin-end)
