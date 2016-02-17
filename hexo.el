@@ -467,14 +467,18 @@ SUBEXP-DEPTH is 0 by default."
 (defun hexo/filter-tag ()
   (interactive)
   (hexo-buffer-only
-   (let* ((tag (completing-read "Filter tag: "
-                                (hexo-get-all-tags "~/source-kuanyui.github.io/") nil t))
-          (hexo--tabulated-list-entries-filter (lambda (x) ;car is id (file-path), cdr is ([status ...])
-                                                 (let* ((info (hexo-get-article-info (car x)))
-                                                        (tags-list (cdr (assq 'tags info))))
-                                                   (member tag tags-list)))))
-     (tabulated-list-revert)
-     (hexo-message "Press %s to disable filter" "g"))))
+   (let ((tag (completing-read "Filter tag: "
+                               (hexo-get-all-tags "~/source-kuanyui.github.io/") nil t)))
+     (if (string= "" tag)
+         (message "No tag inputed, abort.")
+       ;; Assign variable `hexo--tabulated-list-entries-filter' as our filter function
+       (let ((hexo--tabulated-list-entries-filter (lambda (x) ;car is id (file-path), cdr is ([status ...])
+                                                    (let* ((info (hexo-get-article-info (car x)))
+                                                           (tags-list (cdr (assq 'tags info))))
+                                                      (member tag tags-list)))))
+         (tabulated-list-revert)
+         (hexo-message "Press %s to disable filter" "g"))))))
+
 ;; ======================================================
 ;; Universal Commands
 ;; ======================================================
