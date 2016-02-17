@@ -612,7 +612,7 @@ Return absolute path of the article file."
            (permalink (cdr title+permalink))
            )
       (insert (format "[%s](%s)"
-                      (if (y-or-n-p (format "Use original article title \"%s\" ? " title))
+                      (if (y-or-n-p (format "Use original article title '%s' ? " title))
                           title
                         (read-from-minibuffer "Title: "))
                       permalink)))))
@@ -633,7 +633,7 @@ Return absolute path of the article file."
            (message "Cursor is not on a link. Abort"))
           ((and permalink (file-exists-p file-path))
            (find-file file-path)
-           (message (format "Open \"%s\"" file-path)))
+           (message (format "Open '%s'" file-path)))
           ((not (file-exists-p file-path))
            (message "The article seems not to exist, or not a file in your hexo repo. Abort")))))
 
