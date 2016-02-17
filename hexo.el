@@ -3,7 +3,7 @@
 ;; License: WTFPL 1.0
 ;; Code:
 
-(require 'popup)
+
 (require 'cl)
 
 (defgroup hexo nil
@@ -383,9 +383,8 @@ KEY is a downcased symbol. <ex> 'status "
 (defun hexo/show-article-info ()
   (interactive)
   (hexo-buffer-only
-   (let ((pos (save-excursion (beginning-of-line) (+ 2 (point))))
-         (formatted-file-entry (hexo-format-file-entry (tabulated-list-get-entry))))
-     (popup-tip formatted-file-entry))))
+   (let ((formatted-file-entry (hexo-format-file-entry (tabulated-list-get-entry))))
+     (message formatted-file-entry))))
 
 (defun hexo-format-file-entry (file-entry)
   "FILE-ENTRY is a `vector'. See `hexo-get-attribute-in-file-entry'
@@ -393,17 +392,21 @@ KEY is a downcased symbol. <ex> 'status "
   (let* ((keys-string-list (map 'list #'car tabulated-list-format)) ; ("Status" "Filename"...)
          (max-length (apply #'max (mapcar #'length keys-string-list))))
     (concat
-     "\n"
-     (mapconcat (lambda (key-string)
-                  (format "  %s%s: %s  "
-                          (make-string (- max-length (length key-string)) 32) ;align with space (32)
-                          key-string
-                          (hexo-get-attribute-in-file-entry (intern (downcase key-string)) file-entry)))
-                keys-string-list
-                "\n"
-                )
-     "\n"
-     )))
+     (propertize "  File Information\n" 'face 'header-line 'bold t)
+     (mapconcat
+      (lambda (key-string)
+        (concat (propertize
+                 (concat "  "
+                         ;;align with space (32)
+                         (make-string (- max-length (length key-string)) 32)
+                         key-string
+                         " ") 'face 'linum)
+                " "
+                (hexo-get-attribute-in-file-entry (intern (downcase key-string)) file-entry)
+                "  "))
+      keys-string-list
+      "\n"
+      ))))
 
 (define-key hexo-mode-map (kbd "RET") 'hexo/open-file)
 (define-key hexo-mode-map (kbd "SPC") 'hexo/show-article-info)
