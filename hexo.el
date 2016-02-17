@@ -409,10 +409,47 @@ Return absolute path of the article file."
                       permalink)))))
 
 (defun hexo-follow-post-link ()
-  "`find-file' a link like this:
-  [Link](/2015/08/19/coscup-2015/)"
+  "`find-file' a markdown format link.
+  [FIXME] Currently, this function only support a link with
+  file-name as suffix. e.g.
+  [Link](/2015/08/19/coscup-2015/)
+  [Link](/2015/08/19/coscup-2015)
+  [Link](/coscup-2015/)
+"
   (interactive)
-  )
+  (let* ((permalink (hexo-substring-permalink-under-cursor))
+         (file-path (if permalink (hexo-get-file-path-from-post-permalink permalink) nil)))
+    (cond ((null permalink)
+           (message "Cursor is not on a link. Abort"))
+          ((and permalink (file-exists-p file-path))
+           (find-file file-path)
+           (message (format "Open \"%s\"" file-path)))
+          ((not (file-exists-p file-path))
+           (message "The article seems not to exist, or not a file in your hexo repo. Abort")))))
+
+(defun hexo-substring-permalink-under-cursor ()
+  "[Link](/2015/coscup-2015/) => /2015/coscup-2015/
+Return the link. If not found link under cursor, return nil."
+  (interactive)
+  (save-excursion
+    (let* ((original (point))
+           (beg (search-backward "["))
+           (end (search-forward ")"))
+           (str (buffer-substring beg end))
+           (url (progn (string-match "\\[.+?\\](\\(.+?\\))" str)
+                       (match-string 1 str))))
+      (if (and (>= original beg) (<= original end))
+          url
+        nil))))
+
+(defun hexo-get-file-path-from-post-permalink (permalink &optional repo-root-dir)
+  "/2015/coscup-2015/ <= this is permalink
+This is only resonable for files in _posts/."
+  (let ((filename-without-ext (progn (string-match "/?\\([^/]+\\)/?$" permalink)
+                                     (match-string 1 permalink))))
+    (format "%s/source/_posts/%s.md"
+            (hexo-find-root-dir repo-root-dir)
+            filename-without-ext)))
 
 ;; [TODO] hexo-tag-remove, hexo-tag-add, hexo-tag-select-article
 
