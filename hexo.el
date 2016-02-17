@@ -316,9 +316,30 @@ KEY is a downcased symbol. <ex> 'status "
 (defun hexo/help ()
   (interactive)
   (hexo-buffer-only
-   (message (concat "[o] open  [s] sort           [g] refresh\n"
-                    "[N] new   [S] toggle-status  [R] rename   [t] edit tags  [T] touch-time\n"
-                    "[Q] quit  [?] help"))))
+   (let* ((help-str (concat
+                     "[  N] new           [  o] open     [  s] sort         [  g] refresh\n"
+                     "[t s] toggle-status [  R] rename   [t a] tags editor  [t t] touch-time\n"
+                     "[  Q] quit          [  ?] help"))
+          (help-str-without-brackets (replace-regexp-in-string "[][]" " " help-str 'fixedcase)))
+     (mapc (lambda (begin-end)
+             (add-face-text-property (car begin-end) (cdr begin-end) '(face 'hexo-status-post) t help-str-without-brackets))
+           (hexo-string-match-positions "\\(\\[.+?\\]\\)" help-str 1)) ;all position
+     (message help-str-without-brackets))))
+
+
+
+(defun hexo-string-match-positions (regexp string &optional subexp-depth)
+  "Get all matched REGEXP position in a STRING.
+SUBEXP-DEPTH is 0 by default."
+  (if (null subexp-depth)
+      (setq subexp-depth 0))
+  (let ((pos 0) result)
+    (while (and (string-match regexp string pos)
+                (< pos (length string)))
+      (let ((m (match-end subexp-depth)))
+        (push (cons (match-beginning subexp-depth) (match-end subexp-depth)) result)
+        (setq pos m)))
+    (nreverse result)))
 
 (defmacro hexo-buffer-only (&rest body)
   `(if (eq major-mode 'hexo-mode)
