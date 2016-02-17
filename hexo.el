@@ -19,6 +19,10 @@
   "Root directory of a hexo-mode buffer")
 (put 'hexo-root-dir 'permanent-local t)
 
+(defvar-local hexo--tabulated-list-entries-filter nil
+  "Function for filtering entries")
+(put 'hexo--tabulated-list-entries-filter 'permanent-local t)
+
 ;; ======================================================
 ;; Faces
 ;; ======================================================
@@ -146,23 +150,21 @@ If not found, try to `executable-find' hexo in your system."
   "Major mode for manage Hexo articles."
   (hl-line-mode 1)
   (setq tabulated-list-format
-        `[("Status" 6 nil)
-          ("Filename" 20 nil)
-          ("Title" 48 nil)
-          ("Date"  12 nil)
-          ("Categories"  16 nil)
-          ("Tags"  0 nil)])
+        `[("Status" 6 t)
+          ("Filename" 20 t)
+          ("Title" 48 t)
+          ("Date"  12 t)
+          ("Categories"  16 t)
+          ("Tags"  0 t)])
   (setq tabulated-list-padding 2)
   (setq tabulated-list-sort-key (cons "Title" nil))
   (add-hook 'tabulated-list-revert-hook 'hexo-refresh nil t)
   (tabulated-list-init-header))
 
 (defun hexo-refresh ()
-  "Each element in `tabulated-list-entries' is like:
-  (FileFullPath [\"post\" \"test.md\" \"Title\" \"2013/10/24\" \"category\" \"tag, tag2\"])
-  ^ id           ^ entry"
+  "See `hexo-generate-tabulated-list-entries'"
   (setq tabulated-list-entries
-        (hexo-generate-list-entries hexo-root-dir)))
+        (hexo-generate-tabulated-list-entries hexo-root-dir hexo--tabulated-list-entries-filter)))
 
 (defun hexo-directory-files (dir-path)
   "The same as `directory-files', but remove:
@@ -179,9 +181,16 @@ If not found, try to `executable-find' hexo in your system."
                       (string-suffix-p "~" x)))
              (directory-files dir-path 'full)))
 
-(defun hexo-generate-list-entries (&optional repo-root-dir)
-  (mapcar #'hexo-generate-file-entry-for-tabulated-list
-          (hexo-get-all-article-files repo-root-dir 'include-drafts)))
+(defun hexo-generate-tabulated-list-entries (&optional repo-root-dir filter)
+  "Each element in `tabulated-list-entries' is like:
+(FileFullPath [\"post\" \"test.md\" \"Title\" \"2013/10/24\" \"category\" \"tag, tag2\"])
+id           ^ entry
+FILTER is a function with one arg."
+  (let ((entries (mapcar #'hexo-generate-file-entry-for-tabulated-list
+                         (hexo-get-all-article-files repo-root-dir 'include-drafts))))
+    (if filter
+        (remove-if-not filter entries)
+      entries)))
 
 (defun hexo-get-all-article-files (&optional repo-root-dir include-drafts)
   "Return a files list containing full-paths of all articles."
@@ -316,19 +325,23 @@ KEY is a downcased symbol. <ex> 'status "
 (define-key hexo-mode-map (kbd "t s") 'hexo-toggle-article-status)
 (define-key hexo-mode-map (kbd "t t") 'hexo-touch-files-in-dir-by-time)
 (define-key hexo-mode-map (kbd "t a") 'hexo/tags-edit)
+(define-key hexo-mode-map (kbd "f") 'hexo/filter-tag)
 (define-key hexo-mode-map (kbd "R") 'hexo/rename-file)
 (define-key hexo-mode-map (kbd "<f2>") 'hexo/rename-file)
 (define-key hexo-mode-map (kbd "h") 'hexo/help)
 (define-key hexo-mode-map (kbd "?") 'hexo/help)
+(define-key hexo-mode-map (kbd "s") 'tabulated-list-sort)
 (define-key hexo-mode-map (kbd "Q") 'kill-buffer-and-window)
 
 (defun hexo/help ()
   (interactive)
   (hexo-buffer-only
    (let* ((help-str (concat
-                     "[  N] New           [  o] Open        [  s] Sort         [  g] Refresh\n"
-                     "[t s] Toggle status [  R] Rename      [t a] Tags editor  [t t] Touch time\n"
-                     "[  Q] Quit          [  ?] Help"))
+                     (propertize
+                      "File           View              Edit                 Mode\n" 'face 'header-line)
+                     "[  N] New      [  g] Refresh     [t t] Touch time     [  ?] Help\n"
+                     "[  o] Open     [  s] Sort        [t s] Toggle status  [  Q] Quit\n"
+                     "[  R] Rename   [  f] Filter tag  [t a] Edit Tags\n"))
           (help-str-without-brackets (replace-regexp-in-string "[][]" " " help-str 'fixedcase)))
      (mapc (lambda (begin-end)
              (add-face-text-property (car begin-end)
@@ -451,7 +464,17 @@ SUBEXP-DEPTH is 0 by default."
       "\n"
       ))))
 
-
+(defun hexo/filter-tag ()
+  (interactive)
+  (hexo-buffer-only
+   (let* ((tag (completing-read "Filter tag: "
+                                (hexo-get-all-tags "~/source-kuanyui.github.io/") nil t))
+          (hexo--tabulated-list-entries-filter (lambda (x) ;car is id (file-path), cdr is ([status ...])
+                                                 (let* ((info (hexo-get-article-info (car x)))
+                                                        (tags-list (cdr (assq 'tags info))))
+                                                   (member tag tags-list)))))
+     (tabulated-list-revert)
+     (hexo-message "Press %s to disable filter" "g"))))
 ;; ======================================================
 ;; Universal Commands
 ;; ======================================================
