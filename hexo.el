@@ -341,14 +341,12 @@ under theme/default/layout/"
           (t (hexo--new-interactively hexo-command)))))
 
 (defun hexo--new-interactively (hexo-command)
-  (let (stdout created-file)
-    (format "%s new '%s'"
-            (setq stdout (shell-command-to-string
-                          hexo-command
-                          (read-from-minibuffer "Article URI: "))))
-    (string-match "Created: \\(.+\\)$" stdout)
-    (setq created-file (match-string 1 stdout))
-    (find-file created-file)
+  (let* ((stdout (shell-command-to-string (format "%s new '%s'"
+                                                  hexo-command
+                                                  (read-from-minibuffer "Article URI: "))))
+         (created-file-path (progn (string-match "Created: \\(.+\\)$" stdout)
+                                   (match-string 1 stdout))))
+    (find-file created-file-path)
     (goto-char 0)
     (when (y-or-n-p "Rename arcitle title? ")
       (replace-regexp "title: .+$" (format "title: \"%s\""
