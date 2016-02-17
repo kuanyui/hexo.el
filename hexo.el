@@ -3,6 +3,54 @@
 ;; License: WTFPL 1.0
 ;; Code:
 
+(defgroup hexo nil
+  "Manage Hexo with Emacs"
+  :prefix "hexo" :link '(url-link "http://github.com/kuanyui/hexo.el"))
+
+(defgroup hexo-faces nil
+  "Faces used in `hexo-mode'"
+  :group 'hexo :group 'faces)
+
+;; ======================================================
+;; Faces
+;; ======================================================
+
+(defface hexo-status-post
+  '((((class color) (background light)) (:bold t :foreground "#008700" :background "#d7ff87"))
+    (((class color) (background dark)) (:bold t :foreground "#d7ff00" :background "#4e4e4e")))
+  ""
+  :group 'hexo-faces)
+
+(defface hexo-status-draft
+  '((((class color) (background light)) (:bold t :foreground "#ff5d17" :background "#ffd787"))
+    (((class color) (background dark)) (:bold t :foreground "#ff8700" :background "#4e4e4e")))
+  ""
+  :group 'hexo-faces)
+
+(defface hexo-tag
+  '((((class color) (background light)) (:foreground "#005f87" :background "#afd7ff"))
+    (((class color) (background dark)) (:foreground "#87dfff" :background "#4e4e4e")))
+  ""
+  :group 'hexo-faces)
+
+(defface hexo-category
+  '((((class color) (background light)) (:foreground "#6c0099" :background "#ffd5e5"))
+    (((class color) (background dark)) (:foreground "#ff7bbb" :background "#4e4e4e")))
+  ""
+  :group 'hexo-faces)
+
+(defface hexo-date
+  '((((class color) (background light)) (:foreground "#875f00"))
+    (((class color) (background dark)) (:foreground "#ffffaf")))
+  ""
+  :group 'hexo-faces)
+
+(defface hexo-title
+  '((((class color) (background light)) (:foreground "#236f73"))
+    (((class color) (background dark)) (:foreground "#87d7af")))
+  ""
+  :group 'hexo-faces)
+
 ;; ======================================================
 ;; Small tools
 ;; ======================================================
@@ -170,13 +218,17 @@ If not found, try to `executable-find' hexo in your system."
     (list file-path
           (vector
            ;; status
-           (if (equal (hexo-get-article-parent-dir-name file-path) "_posts") "post" "draft")
+           (if (equal (hexo-get-article-parent-dir-name file-path) "_posts")
+               (propertize "post" 'face 'hexo-status-post)
+             (propertize "draft" 'face 'hexo-status-draft))
            ;; filename
            (file-name-base file-path)
-           (cdr (assq 'title info))
-           (cdr (assq 'date info))
-           (mapconcat #'identity (cdr (assq 'categories info)) " ")
-           (mapconcat #'identity (cdr (assq 'tags info)) " ")
+           (propertize (cdr (assq 'title info)) 'face 'hexo-title)
+           (propertize (cdr (assq 'date info)) 'face 'hexo-date)
+           (mapconcat (lambda (x) (propertize x 'face 'hexo-category))
+                      (cdr (assq 'categories info)) " ")
+           (mapconcat (lambda (x) (propertize x 'face 'hexo-tag))
+                      (cdr (assq 'tags info)) " ")
            ))))
 
 (defun hexo-get-attribute-in-file-entry (key file-entry)
