@@ -752,10 +752,6 @@ This is only resonable for files in _posts/."
   (async-shell-command (hexo-replace-hexo-command-to-path command-string repo-path)
                        hexo-process-buffer-name)
   (setq hexo-process (get-buffer-process hexo-process-buffer-name))
-  ;; [SHIT] Why no ANSI color?! Why?!
-  (set-process-filter hexo-process (lambda (process string)
-                                     (with-current-buffer (process-buffer process)
-                                       (insert (ansi-color-apply string)))))
   (pop-to-buffer hexo-process-buffer-name))
 
 ;;(term-send-string )
