@@ -323,6 +323,10 @@ You can run this function in dired or a hexo article."
              (message (format "Moved to %s." to))))))
 
 
+;; ======================================================
+;; Commands for article buffers only
+;; ======================================================
+
 ;;;###autoload
 (defun hexo-update-current-article-date ()
   "Update article's date stamp (at the head) by current time.
@@ -345,7 +349,7 @@ Please run this function in the article."
 
 
 (defun hexo-get-permalink-format (&optional root-or-file-path)
-  "Return permalink format string. ex: %Y/%m/%d/%s"
+  "Get permalink format string from config file. ex: %Y/%m/%d/%s"
   (let ((config-file (format "%s/_config.yml" (hexo-find-root-dir root-or-file-path))))
     (with-temp-buffer
       (insert-file config-file)
@@ -387,8 +391,6 @@ Return absolute path of the article file."
     (string-match "title:\\(.+\\)" head)
     (hexo-trim (match-string 1 head))))
 
-
-
 ;;;###autoload
 (defun hexo-insert-article-link ()
   "Insert a link to other article in _posts/."
@@ -408,6 +410,7 @@ Return absolute path of the article file."
                         (read-from-minibuffer "Title: "))
                       permalink)))))
 
+;;;###autoload
 (defun hexo-follow-post-link ()
   "`find-file' a markdown format link.
   [FIXME] Currently, this function only support a link with
