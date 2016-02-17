@@ -107,6 +107,12 @@ If not found, try to `executable-find' hexo in your system."
           (shell-command-to-string (concat hexo args-string))
         nil))))
 
+(defun hexo-sort-string-list (string-list)
+  (sort string-list #'string<))
+
+(defun hexo-remove-duplicates-in-string-list (string-list)
+  (remove-duplicates string-list :test #'string=))
+
 ;; ======================================================
 ;; Article manager
 ;; ======================================================
@@ -185,7 +191,7 @@ If not found, try to `executable-find' hexo in your system."
   (cond ((string-match "\\[\\(.+\\)\\]" string)
          (let* ((raw (match-string 1 string)) ; "this", "is", "tag"
                 (raw (replace-regexp-in-string ", " "," raw 'fixedcase)))
-           (mapcar #'hexo-trim-quotes (split-string raw ","))))
+           (remove "" (mapcar #'hexo-trim-quotes (split-string raw ",")))))
         ((string-match "^ *$" string)
          '())
         (t
@@ -228,7 +234,7 @@ If not found, try to `executable-find' hexo in your system."
            (mapconcat (lambda (x) (propertize x 'face 'hexo-category))
                       (cdr (assq 'categories info)) " ")
            (mapconcat (lambda (x) (propertize x 'face 'hexo-tag))
-                      (cdr (assq 'tags info)) " ")
+                      (hexo-sort-string-list (cdr (assq 'tags info))) " ")
            ))))
 
 (defun hexo-get-attribute-in-file-entry (key file-entry)
@@ -308,6 +314,56 @@ Key is a downcased symbol. <ex> 'status "
    (message (concat "[o] open  [s] sort           [g] refresh\n"
                     "[N] new   [S] toggle-status  [R] rename   [t] edit tags  [T] touch-time\n"
                     "[Q] quit  [?] help"))))
+
+(defun hexo/edit-tags ()
+  (interactive)
+  (hexo-buffer-only
+   (let* ((file-path (tabulated-list-get-id))
+          (info (hexo-get-article-info file-path))
+          (old-tags-list (cdr (assq 'tags info)))
+          (new-tags-list (hexo--edit-tags-iter old-tags-list (hexo-get-all-tags)))
+          (formatted-new-tags-list (hexo-format-tags-list new-tags-list))
+          (old-file-content (hexo-get-file-content-as-string file-path))
+          (new-file-content (with-temp-buffer
+                              (insert old-file-content)
+                              (goto-char (point-min))
+                              (re-search-forward "tags:.*" nil t)
+                              (replace-match (format "tags: %s" formatted-new-tags-list))
+                              (buffer-string))))
+     (hexo-write-file file-path new-file-content))))
+
+(defun hexo-get-file-content-as-string (file-path)
+  (with-temp-buffer
+    (insert-file file-path)
+    (buffer-string)))
+
+(defun hexo-write-file (file-path string)
+  "Overwrite the whole file content to STRING."
+  (with-temp-file file-path (insert string)))
+
+(defun hexo-get-all-tags (&optional root-dir)
+  (hexo-sort-string-list
+   (hexo-remove-duplicates-in-string-list
+    (mapcan (lambda (file-path)
+              (cdr (assq 'tags (hexo-get-article-info file-path))))
+            (hexo-get-all-article-files root-dir 'include-drafts)))))
+
+(defun hexo--edit-tags-iter (this-file-tags-list all-tags)
+  (let ((tag (ido-completing-read
+              (format "Add / Remove Tags (C-j to apply) :\n Current tags => %s\n" this-file-tags-list)
+              all-tags nil nil)))
+    (cond ((string= "" tag)
+           this-file-tags-list)
+          ((member tag this-file-tags-list) ;tag exist in this file
+           (hexo--edit-tags-iter (remove tag this-file-tags-list) all-tags))
+          (t
+           (hexo--edit-tags-iter
+            (hexo-sort-string-list (cons tag this-file-tags-list))
+            (hexo-sort-string-list (hexo-remove-duplicates-in-string-list (cons tag all-tags))))))))
+
+(defun hexo-format-tags-list (tags-list)
+  (format "[%s]"
+          (mapconcat #'identity tags-list ", ")))
 
 (define-key hexo-mode-map (kbd "RET") 'hexo/open-file)
 (define-key hexo-mode-map (kbd "n") 'hexo-new)
