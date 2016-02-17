@@ -22,6 +22,9 @@
   "Function for filtering entries")
 (put 'hexo--tabulated-list-entries-filter 'permanent-local t)
 
+(defvar hexo--process nil
+  "Hexo process object")
+
 ;; ======================================================
 ;; Faces
 ;; ======================================================
@@ -96,18 +99,18 @@
   "Get first N lines of a file as a string."
   (mapconcat #'identity (hexo-get-file-head-lines file-path n) "\n"))
 
-(defun hexo-find-command ()
+(defun hexo-find-command (&optional from-path)
   "Try to find hexo in node_modules/ directory.
 If not found, try to `executable-find' hexo in your system."
-  (let* ((root-dir (hexo-find-root-dir))
+  (let* ((root-dir (hexo-find-root-dir from-path))
          (guessed-hexo (format "%s/node_modules/hexo/bin/hexo" root-dir)))
     (if (and root-dir (file-exists-p guessed-hexo))
         guessed-hexo
       (executable-find "hexo"))))
 
-(defun hexo-find-root-dir (&optional current-path)
+(defun hexo-find-root-dir (&optional from-path)
   "Try to find the root dir of a Hexo repository."
-  (let ((PWD (or current-path default-directory)))
+  (let ((PWD (or from-path default-directory)))
     (cond ((equal (file-truename PWD) "/")
            nil)
           ((and (file-exists-p (concat PWD "/_config.yml"))
@@ -289,6 +292,7 @@ KEY is a downcased symbol. <ex> 'status "
    (directory-file-name
     (file-name-directory file-path))))
 
+;;;###autoload
 (defun hexo ()
   "Open Hexo-mode buffer"
   (interactive)
@@ -369,6 +373,12 @@ SUBEXP-DEPTH is 0 by default."
   `(if (eq major-mode 'hexo-mode)
        (progn ,@body)
      (message "Please run his command in `hexo-mode' buffer (M-x `hexo').")))
+
+(defmacro hexo-repo-only (&rest body)
+  `(let ((dir (or hexo-root-dir (hexo-find-root-dir))))
+     (if dir
+         (progn (cd dir) ,@body)
+       (message "Please run his command under a Hexo repo directory."))))
 
 (defun hexo/open-file ()
   (interactive)
@@ -725,5 +735,44 @@ This is only resonable for files in _posts/."
             (hexo-find-root-dir repo-root-dir)
             filename-without-ext)))
 
+;; ======================================================
+;; Run Hexo process in Emacs
+;; ======================================================
+
+(defun hexo-start-process-shell-command (command-string &optional repo-path)
+  "COMMAND-STRING example:
+\"hexo clean;hexo generate;hexo server --debug\""
+  (if (process-live-p hexo--process)
+      (kill-process hexo--process))
+  (setq hexo--process (start-process-shell-command
+                       "hexo-process"
+                       "*Hexo process*"
+                       (hexo-replace-hexo-command-to-path command-string repo-path)))
+  (pop-to-buffer "*Hexo process*"))
+
+(defun hexo-replace-hexo-command-to-path (command-string &optional repo-path)
+  "Replace all 'hexo' in COMMAND-STRING to hexo command's path"
+  (replace-regexp-in-string "hexo"
+                            (hexo-find-command repo-path)
+                            command-string))
+
+(defun hexo:run-server ()
+  (interactive)
+  (hexo-repo-only
+   (let ((type (ido-completing-read "[Hexo server] Type: " '("posts-only" "posts+drafts") nil t)))
+     (cond ((string= type "posts+drafts")
+            (hexo-start-process-shell-command "hexo clean;hexo generate;hexo server --debug --drafts"))
+           ((string= type "posts-only")
+            (hexo-start-process-shell-command "hexo clean;hexo generate;hexo server --debug"))))))
+
+(defun hexo:deploy ()
+  (interactive)
+  (hexo-repo-only
+   (hexo-start-process-shell-command "hexo clean;hexo generate;hexo deploy")))
+
+(defun hexo:kill-server ()
+  (interactive)
+  (if (process-live-p hexo--process)
+      (kill-process hexo--process)))
 
 (provide 'hexo)
