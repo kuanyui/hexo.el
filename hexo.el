@@ -747,6 +747,7 @@ This is only resonable for files in _posts/."
                        "hexo-process"
                        "*Hexo process*"
                        (hexo-replace-hexo-command-to-path command-string repo-path)))
+  ;; [SHIT] Why no ANSI color?! Why?!
   (set-process-filter hexo--process (lambda (process string)
                                       (with-current-buffer (process-buffer process)
                                         (insert (ansi-color-apply string)))))
