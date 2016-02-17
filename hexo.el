@@ -330,9 +330,7 @@ Key is a downcased symbol. <ex> 'status "
 That's to say, you can use this function to create new post, even though
 under theme/default/layout/"
   (interactive)
-  (let* (stdout
-         created-file
-         (hexo-command (hexo-find-command)))
+  (let ((hexo-command (hexo-find-command)))
     (cond ((and (eq major-mode 'hexo-mode) hexo-root-dir) ; in hexo-mode
            (cd hexo-root-dir)
            (hexo--new-interactively hexo-command))
@@ -449,20 +447,23 @@ Please run this function in the article."
 
 
 (defun hexo-get-permalink-format (&optional root-or-file-path)
-  "Get permalink format string from config file. ex: %Y/%m/%d/%s"
-  (let ((config-file (format "%s/_config.yml" (hexo-find-root-dir root-or-file-path))))
-    (with-temp-buffer
-      (insert-file config-file)
-      (string-match "^permalink: \\(.+\\)" (buffer-string))
-      (setq permalink-format (replace-regexp-in-string
-                              ":year" "%Y"
-                              (replace-regexp-in-string
-                               ":month" "%m"
-                               (replace-regexp-in-string
-                                ":day" "%d"
-                                (match-string 1 (buffer-string))))))
-      (string-match "^root: \\(.+\\)" (buffer-string)) ;concat root
-      (concat (match-string 1 (buffer-string)) permalink-format))))
+  "Get permalink format string from config file. ex: /%Y/%m/%d/:title/"
+  (let* ((config-file-path (format "%s/_config.yml" (hexo-find-root-dir root-or-file-path)))
+         (config-text (with-temp-buffer (insert-file-contents config-file-path)
+                                        (buffer-string)))
+         (permalink-format-raw (progn (string-match "^permalink: ?\\(.+\\)" config-text)
+                                      (match-string 1 config-text)))
+         (permalink-format (replace-regexp-in-string
+                            ":year" "%Y"
+                            (replace-regexp-in-string
+                             ":month" "%m"
+                             (replace-regexp-in-string
+                              ":day" "%d"
+                              permalink-format-raw))))
+         (root (progn (string-match "^root: \\(.+\\)" config-text)
+                      (match-string 1 config-text))))
+    (concat root permalink-format)))
+
 
 (defun hexo-get-article-title-and-permalink (file-path)
   "return a dotted pair (TITLE . PERMALINK)"
