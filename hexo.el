@@ -323,7 +323,7 @@ KEY is a downcased symbol. <ex> 'status "
 
 (define-key hexo-mode-map (kbd "RET") 'hexo/open-file)
 (define-key hexo-mode-map (kbd "SPC") 'hexo/show-article-info)
-(define-key hexo-mode-map (kbd "n") 'hexo-new)
+(define-key hexo-mode-map (kbd "N") 'hexo-new)
 (define-key hexo-mode-map (kbd "t") nil)
 (define-key hexo-mode-map (kbd "t s") 'hexo-toggle-article-status)
 (define-key hexo-mode-map (kbd "t t") 'hexo-touch-files-in-dir-by-time)
@@ -504,7 +504,7 @@ SUBEXP-DEPTH is 0 by default."
 ;; Following commands are available outside hexo-mode.
 
 ;;;###autoload
-(defun hexo-new ()
+(defun hexo-new ()                      ;[TODO] Add tags when hexo-new
   "Call `hexo new` anywhere as long as in any child directory
  under a Hexo repository.
 That's to say, you can use this function to create new post, even though
@@ -748,7 +748,8 @@ This is only resonable for files in _posts/."
   "COMMAND-STRING example:
 \"hexo clean;hexo generate;hexo server --debug\""
   (if (process-live-p hexo-process)
-      (kill-process hexo-process))
+      (progn (interrupt-process hexo-process)
+             (kill-buffer hexo-process-buffer-name)))
   (async-shell-command (hexo-replace-hexo-command-to-path command-string repo-path)
                        hexo-process-buffer-name)
   (setq hexo-process (get-buffer-process hexo-process-buffer-name))
@@ -780,6 +781,7 @@ This is only resonable for files in _posts/."
   (interactive)
   (if (process-live-p hexo-process)
       (progn (kill-process hexo-process)
+             (kill-buffer hexo-process-buffer-name)
              (message "Server stopped ~!"))
     (message "No active server found")))
 
