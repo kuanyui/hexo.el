@@ -58,6 +58,14 @@
 ;; Small tools
 ;; ======================================================
 
+(defun hexo-message (format-string &rest args)
+  "The same as `message', but it `propertize' all ARGS with
+`font-lock-keyword-face'"
+  (apply #'message format-string (mapcar
+                                  (lambda (arg)
+                                    (propertize (format "%s" arg) 'face 'font-lock-keyword-face))
+                                  args)))
+
 (defun hexo-get-file-head-lines (file-path &optional n)
   "Get the first N lines of a file as a list."
   (with-temp-buffer
@@ -253,9 +261,9 @@ The struct of FILE-ENTRY is defined in `tabulated-list-format'.
 <ex> [(\"Status\" 6 nil) (\"Filename\" 48 nil) (\"Title\" 48 nil)]
 KEY is a downcased symbol. <ex> 'status "
   (let ((index (position key tabulated-list-format
-                       :test (lambda (ele lst)
-                               (equal (capitalize (symbol-name ele))
-                                      (car lst))))))
+                         :test (lambda (ele lst)
+                                 (equal (capitalize (symbol-name ele))
+                                        (car lst))))))
     (aref file-entry index)))
 
 (defun hexo-get-article-parent-dir-name (file-path)
@@ -313,7 +321,7 @@ KEY is a downcased symbol. <ex> 'status "
                                  original-name-without-ext))
           (new-file-path (format "%s/%s.md" pwd new-name-without-ext)))
      (if (file-exists-p new-file-path)
-         (progn (message "Filename '%s' already existed. Please try another name." new-name-without-ext)
+         (progn (hexo-message "Filename '%s' already existed. Please try another name." new-name-without-ext)
                 (sit-for 5)
                 (hexo-rename-file new-name-without-ext))
        (progn (rename-file original-file-path new-file-path)
@@ -497,8 +505,8 @@ You can run this function in dired or a hexo article."
          (let ((new-path (hexo--toggle-article-status (buffer-file-name))))
            (if new-path
                (progn (find-alternate-file new-path)
-                      (message "Now this file is in '%s'"
-                               (hexo-get-article-parent-dir-name new-path)))
+                      (hexo-message "Now this file is in '%s'"
+                                 (hexo-get-article-parent-dir-name new-path)))
              (message "Two filenames duplicated in _posts/ and _drafts/. Abort."))))
         ((and (eq major-mode 'dired-mode)
               (hexo-find-root-dir)
@@ -523,7 +531,7 @@ If success, return the new file path, else nil."
           (message (format "A file with the same name has existed in %s, please rename and try again." to)))
       (prog1 to-path
         (rename-file file-path to-path)
-        (message (format "Now article '%s' is in '%s'" (file-name-base to-path) to))
+        (hexo-message "Now article '%s' is in '%s'" (file-name-base to-path) to)
         ))))
 
 
@@ -633,7 +641,7 @@ Return absolute path of the article file."
            (message "Cursor is not on a link. Abort"))
           ((and permalink (file-exists-p file-path))
            (find-file file-path)
-           (message (format "Open '%s'" file-path)))
+           (hexo-message "Open '%s'" file-path))
           ((not (file-exists-p file-path))
            (message "The article seems not to exist, or not a file in your hexo repo. Abort")))))
 
