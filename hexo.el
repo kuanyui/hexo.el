@@ -251,14 +251,17 @@ Key is a downcased symbol. <ex> 'status "
 
 (defun hexo-help ()
   (interactive)
-  (message (concat "[o] open  [s] sort           [g] refresh  [T] edit tags\n"
-                   "[N] new   [S] toggle-status  [R] rename   [t] touch-time\n"
+  (message (concat "[o] open  [s] sort           [g] refresh\n"
+                   "[N] new   [S] toggle-status  [R] rename   [t] edit tags  [T] touch-time\n"
                    "[Q] quit  [?] help")))
 
 (define-key hexo-mode-map (kbd "RET") 'hexo-open-file)
 (define-key hexo-mode-map (kbd "n") 'hexo-new)
-(define-key hexo-mode-map (kbd "t") 'hexo-toggle-article-status)
+(define-key hexo-mode-map (kbd "S") 'hexo-toggle-article-status)
+(define-key hexo-mode-map (kbd "T") 'hexo-touch-files-in-dir-by-time)
 (define-key hexo-mode-map (kbd "r") 'hexo-rename-file)
+(define-key hexo-mode-map (kbd "h") 'hexo-help)
+(define-key hexo-mode-map (kbd "?") 'hexo-help)
 
 ;; ======================================================
 ;; Universal Commands
@@ -304,7 +307,7 @@ under theme/default/layout/"
   "`touch' markdown article files according their \"date: \" to
 make it easy to sort file according date in Dired or `hexo-mode'."
   (interactive)
-  (if (not (hexo-find-root-dir))
+  (if (not (or hexo-root-dir (hexo-find-root-dir)))
       (message "Please run this command under a hexo repository.")
     (let ((touch-commands-list (mapcar (lambda (file)
                                          (let ((head (hexo-get-file-head-lines-as-string file 5)))
