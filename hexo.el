@@ -272,7 +272,7 @@ Key is a downcased symbol. <ex> 'status "
 
 
 ;; ======================================================
-;; Commands for hexo-mode
+;; Commands for hexo-mode only
 ;; ======================================================
 
 (defmacro hexo-buffer-only (&rest body)
@@ -280,12 +280,12 @@ Key is a downcased symbol. <ex> 'status "
        (progn ,@body)
      (message "Please run his command in `hexo-mode' buffer (M-x `hexo').")))
 
-(defun hexo-open-file ()
+(defun hexo/open-file ()
   (interactive)
   (hexo-buffer-only
    (find-file (tabulated-list-get-id))))
 
-(defun hexo-rename-file (&optional init-value)
+(defun hexo/rename-file (&optional init-value)
   (interactive)
   (hexo-buffer-only
    (let* ((original-file-path (tabulated-list-get-id))
@@ -302,19 +302,20 @@ Key is a downcased symbol. <ex> 'status "
        (progn (rename-file original-file-path new-file-path)
               (message "Rename successful!"))))))
 
-(defun hexo-help ()
+(defun hexo/help ()
   (interactive)
-  (message (concat "[o] open  [s] sort           [g] refresh\n"
-                   "[N] new   [S] toggle-status  [R] rename   [t] edit tags  [T] touch-time\n"
-                   "[Q] quit  [?] help")))
+  (hexo-buffer-only
+   (message (concat "[o] open  [s] sort           [g] refresh\n"
+                    "[N] new   [S] toggle-status  [R] rename   [t] edit tags  [T] touch-time\n"
+                    "[Q] quit  [?] help"))))
 
-(define-key hexo-mode-map (kbd "RET") 'hexo-open-file)
+(define-key hexo-mode-map (kbd "RET") 'hexo/open-file)
 (define-key hexo-mode-map (kbd "n") 'hexo-new)
 (define-key hexo-mode-map (kbd "S") 'hexo-toggle-article-status)
 (define-key hexo-mode-map (kbd "T") 'hexo-touch-files-in-dir-by-time)
-(define-key hexo-mode-map (kbd "r") 'hexo-rename-file)
-(define-key hexo-mode-map (kbd "h") 'hexo-help)
-(define-key hexo-mode-map (kbd "?") 'hexo-help)
+(define-key hexo-mode-map (kbd "r") 'hexo/rename-file)
+(define-key hexo-mode-map (kbd "h") 'hexo/help)
+(define-key hexo-mode-map (kbd "?") 'hexo/help)
 (define-key hexo-mode-map (kbd "Q") 'kill-buffer-and-window)
 
 ;; ======================================================
@@ -402,7 +403,7 @@ You can run this function in dired or a hexo article."
 3. Dired-mode (remember to move your cursor onto a valid .md file first)"))))
 
 (defun hexo--toggle-article-status (file-path)
-  "Move file between _posts and _drafts"
+  "Move file (`rename-file') between _posts and _drafts"
   (let* ((from (hexo-get-article-parent-dir-name file-path))
          (to (if (string= from "_posts") "_drafts" "_posts"))
          (to-path (format "%s/source/%s/%s"
