@@ -24,7 +24,7 @@
   "Function for filtering entries")
 (put 'hexo--tabulated-list-entries-filter 'permanent-local t)
 
-(defvar hexo--process nil
+(defvar hexo-process nil
   "Hexo process object")
 
 ;; ======================================================
@@ -742,20 +742,22 @@ This is only resonable for files in _posts/."
 ;; Run Hexo process in Emacs
 ;; ======================================================
 
+(defvar hexo-process-buffer-name "*hexo-process*")
+
 (defun hexo-start-process-shell-command (command-string &optional repo-path)
   "COMMAND-STRING example:
 \"hexo clean;hexo generate;hexo server --debug\""
-  (if (process-live-p hexo--process)
-      (kill-process hexo--process))
-  (setq hexo--process (start-process-shell-command
-                       "hexo-process"
-                       "*Hexo process*"
-                       (hexo-replace-hexo-command-to-path command-string repo-path)))
+  (if (process-live-p hexo-process)
+      (kill-process hexo-process))
+  (setq hexo-process (start-process-shell-command
+                      "hexo-process"
+                      hexo-process-buffer-name
+                      (hexo-replace-hexo-command-to-path command-string repo-path)))
   ;; [SHIT] Why no ANSI color?! Why?!
-  (set-process-filter hexo--process (lambda (process string)
-                                      (with-current-buffer (process-buffer process)
-                                        (insert (ansi-color-apply string)))))
-  (pop-to-buffer "*Hexo process*"))
+  (set-process-filter hexo-process (lambda (process string)
+                                     (with-current-buffer (process-buffer process)
+                                       (insert (ansi-color-apply string)))))
+  (pop-to-buffer hexo-process-buffer-name))
 
 ;;(term-send-string )
 ;;(shell (get-buffer-create "*Hexo process*"))
@@ -783,8 +785,8 @@ This is only resonable for files in _posts/."
 
 (defun hexo:stop-server ()
   (interactive)
-  (if (process-live-p hexo--process)
-      (progn (kill-process hexo--process)
+  (if (process-live-p hexo-process)
+      (progn (kill-process hexo-process)
              (message "Server stopped ~!"))
     (message "No active server found")))
 
