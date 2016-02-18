@@ -178,20 +178,20 @@ If not found, try to `executable-find' hexo in your system."
   (hexo-setq-tabulated-list-format)
   (setq tabulated-list-sort-key '("Date" . t)) ;Sort by Date default
   (setq tabulated-list-padding 2)
-  (add-hook 'tabulated-list-revert-hook 'hexo-setq-tabulated-list-format  nil t)
-  (add-hook 'tabulated-list-revert-hook 'hexo-setq-tabulated-list-entries t t)
+  (add-hook 'tabulated-list-revert-hook 'hexo-setq-tabulated-list-format nil t) ; `setq' new columns sizes
+  (add-hook 'tabulated-list-revert-hook 'hexo-setq-tabulated-list-entries t t) ; `setq' the data
   (tabulated-list-init-header)
   )
 
 (defun hexo/revert-tabulated-list ()
   ;; Because `tabulated-list-init-header' must be called *after*
-  ;; `tabulated-list-revert' for dynamic column size (see
+  ;; `tabulated-list-revert' for dynamic columns sizes (see
   ;; `hexo-generate-tabulated-list-format'), but `tabulated-list'
   ;; provide only a hook called *before* revert.
   (interactive)
   (hexo-buffer-only
-   (tabulated-list-revert)
-   (tabulated-list-init-header)))
+   (tabulated-list-revert)              ; native revert function
+   (tabulated-list-init-header)))       ; adjust column sizes
 
 (defun hexo-setq-tabulated-list-format ()
   (setq tabulated-list-format (hexo-generate-tabulated-list-format)))
