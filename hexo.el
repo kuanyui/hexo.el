@@ -74,6 +74,12 @@ See `hexo-setq-tabulated-list-entries'")
   ""
   :group 'hexo-faces)
 
+(defface hexo-mark
+  '((((class color) (background light)) (:foreground "#ff4ea3" :bold t))
+    (((class color) (background dark)) (:foreground "#ff4ea3" :bold t)))
+  ""
+  :group 'hexo-faces)
+
 ;; ======================================================
 ;; Small tools
 ;; ======================================================
@@ -183,7 +189,7 @@ If not found, try to `executable-find' hexo in your system."
   (hl-line-mode 1)
   (hexo-setq-tabulated-list-format)
   (setq tabulated-list-sort-key '("Date" . t)) ;Sort by Date default
-  (setq tabulated-list-padding 2)
+  (setq tabulated-list-padding 3)
   (add-hook 'tabulated-list-revert-hook 'hexo-setq-tabulated-list-format nil t) ; `setq' new columns sizes
   (add-hook 'tabulated-list-revert-hook 'hexo-setq-tabulated-list-entries t t) ; `setq' the data
   (tabulated-list-init-header)
@@ -207,7 +213,7 @@ If not found, try to `executable-find' hexo in your system."
   "This function is for adjusting column size according to
 `window-size'"
   (let* ((status 6)
-         (date 12)
+         (date 11)
          (categories 16)
          (left-width (- (window-width)
                         (+ status date categories 20))) ;20 spaces are remained for Tags
@@ -396,6 +402,9 @@ KEY is a downcased symbol. <ex> 'status "
 (define-key hexo-mode-map (kbd "s d") 'hexo:deploy)
 (define-key hexo-mode-map (kbd "Q") 'kill-buffer-and-window)
 (define-key hexo-mode-map (kbd "g") 'hexo/revert-tabulated-list)
+(define-key hexo-mode-map (kbd "m") 'hexo/mark)
+(define-key hexo-mode-map (kbd "u") 'hexo/unmark)
+
 
 (defun hexo/help ()
   (interactive)
@@ -560,6 +569,30 @@ SUBEXP-DEPTH is 0 by default."
                         (member tag tags-list))))
               (tabulated-list-revert)
               (hexo-message "Press %s to disable filter" "g"))))))
+
+(defun hexo/mark ()
+  (interactive)
+  (hexo-buffer-only
+   (tabulated-list-put-tag (propertize " m" 'face 'hexo-mark) t)))
+
+(defun hexo/unmark ()
+  (interactive)
+  (hexo-buffer-only
+   (tabulated-list-put-tag "  " t)))
+
+(defun hexo-get-marked-files-path ()
+  (if (not (eq major-mode 'hexo-mode))
+      (error "`hexo-get-marked-files-path' should be called in `hexo-mode'")
+    (let (file-pathes)
+      (save-excursion (goto-char (point-min))
+                      (while (not (eobp))
+                        (cond ((eq (char-after (1+ (point))) ?m)
+                               (push (tabulated-list-get-id) file-pathes)
+                               (next-line))
+                              (t
+                               (next-line)))))
+      file-pathes)))
+
 
 ;; ======================================================
 ;; Universal Commands
