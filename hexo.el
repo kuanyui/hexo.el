@@ -175,23 +175,39 @@ If not found, try to `executable-find' hexo in your system."
 (define-derived-mode hexo-mode tabulated-list-mode "Hexo"
   "Major mode for manage Hexo articles."
   (hl-line-mode 1)
-  (setq tabulated-list-format (hexo-generate-tabulated-list-format))
-  (setq tabulated-list-sort-key '("Date" . t))
+  (hexo-setq-tabulated-list-format)
+  (setq tabulated-list-sort-key '("Date" . t)) ;Sort by Date default
   (setq tabulated-list-padding 2)
-  (add-hook 'tabulated-list-revert-hook 'hexo-setq-tabulated-list-entries nil t)
-  (tabulated-list-init-header))
+  (add-hook 'tabulated-list-revert-hook 'hexo-setq-tabulated-list-format  nil t)
+  (add-hook 'tabulated-list-revert-hook 'hexo-setq-tabulated-list-entries t t)
+  (tabulated-list-init-header)
+  )
 
+(defun hexo/revert-tabulated-list ()
+  ;; Because `tabulated-list-init-header' must be called *after*
+  ;; `tabulated-list-revert' for dynamic column size (see
+  ;; `hexo-generate-tabulated-list-format'), but `tabulated-list'
+  ;; provide only a hook called *before* revert.
+  (interactive)
+  (hexo-buffer-only
+   (tabulated-list-revert)
+   (tabulated-list-init-header)))
+
+(defun hexo-setq-tabulated-list-format ()
+  (setq tabulated-list-format (hexo-generate-tabulated-list-format)))
 
 (defun hexo-generate-tabulated-list-format ()
-  "This function is for adjusting colum size according to
+  "This function is for adjusting column size according to
 `window-size'"
   (let* ((status 6)
          (date 12)
          (categories 16)
          (left-width (- (window-width)
                         (+ status date categories 20))) ;20 spaces are remained for Tags
-         (filename (floor (* left-width 0.4)))
-         (title (- left-width filename)))
+         (filename (min 40
+                        (floor (* left-width 0.4))))
+         (title (min 48
+                     (- left-width filename))))
     (vector (list "Status" status t)
             (list "Filename" filename t)
             (list "Title" title t)
@@ -371,6 +387,7 @@ KEY is a downcased symbol. <ex> 'status "
 (define-key hexo-mode-map (kbd "s s") 'hexo:stop-server)
 (define-key hexo-mode-map (kbd "s d") 'hexo:deploy)
 (define-key hexo-mode-map (kbd "Q") 'kill-buffer-and-window)
+(define-key hexo-mode-map (kbd "g") 'hexo/revert-tabulated-list)
 
 (defun hexo/help ()
   (interactive)
