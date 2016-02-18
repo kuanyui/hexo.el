@@ -175,18 +175,29 @@ If not found, try to `executable-find' hexo in your system."
 (define-derived-mode hexo-mode tabulated-list-mode "Hexo"
   "Major mode for manage Hexo articles."
   (hl-line-mode 1)
-  (setq tabulated-list-format
-        `[("Status" 6 t)
-          ("Filename" 20 t)
-          ("Title" 48 t)
-          ("Date"  12 t)
-          ("Categories"  16 t)
-          ("Tags"  0 t)])
+  (setq tabulated-list-format (hexo-generate-tabulated-list-format))
   (setq tabulated-list-sort-key '("Date" . t))
   (setq tabulated-list-padding 2)
   (add-hook 'tabulated-list-revert-hook 'hexo-setq-tabulated-list-entries nil t)
   (tabulated-list-init-header))
 
+
+(defun hexo-generate-tabulated-list-format ()
+  "This function is for adjusting colum size according to
+`window-size'"
+  (let* ((status 6)
+         (date 12)
+         (categories 16)
+         (left-width (- (window-width)
+                        (+ status date categories 20))) ;20 spaces are remained for Tags
+         (filename (floor (* left-width 0.4)))
+         (title (- left-width filename)))
+    (vector (list "Status" status t)
+            (list "Filename" filename t)
+            (list "Title" title t)
+            (list "Date"  date t)
+            (list "Categories"  categories t)
+            (list "Tags"  0 t))))
 
 (defun hexo-setq-tabulated-list-entries ()
   "This function is used as a hook for `tabulated-list-revert-hook'.
