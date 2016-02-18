@@ -261,11 +261,9 @@ In `tabulated-list-mode', use `tabulated-list-get-id' and
   (let ((info (hexo-get-article-info file-path)))
     (list file-path
           (vector
-           ;; status
            (if (equal (hexo-get-article-parent-dir-name file-path) "_posts")
                (propertize "post" 'face 'hexo-status-post)
              (propertize "draft" 'face 'hexo-status-draft))
-           ;; filename
            (file-name-base file-path)
            (propertize (cdr (assq 'title info)) 'face 'hexo-title)
            (propertize (cdr (assq 'date info)) 'face 'hexo-date)
@@ -630,7 +628,8 @@ Please run this function in the article."
 
 
 (defun hexo-get-permalink-format (&optional root-or-file-path)
-  "Get permalink format string from config file. ex: /%Y/%m/%d/:title/"
+  "Get permalink format string from config file.
+<ex> /:year/:month/:day/:title/  =>  /%Y/%m/%d/:title/"
   (let* ((config-file-path (format "%s/_config.yml" (hexo-find-root-dir root-or-file-path)))
          (config-text (with-temp-buffer (insert-file-contents config-file-path)
                                         (buffer-string)))

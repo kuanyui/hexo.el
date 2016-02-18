@@ -24,12 +24,12 @@ Emacs major-mode & tools for [[https://github.com/hexojs/hexo][Hexo]]. σ(´∀�
 
 The following commands are available in =markdown-mode=, =dired-mode=, =hexo-mode= 
 
-| Command                           | Description                                                                |
-|-----------------------------------+----------------------------------------------------------------------------|
+| Command                         | Description                                                                |
+|---------------------------------+----------------------------------------------------------------------------|
 | =hexo-new=                        | Create new post anywhere.                                                  |
-| =hexo-move-article=               | Move article between =_post/= and =_draft/=.                               |
+| =hexo-move-article=               | Move article between =_post/= and =_draft/=.                                   |
 | =hexo-touch-files-in-dir-by-time= | Touch all files by their timestamp to make files sortable in file-manager. |
-|-----------------------------------+----------------------------------------------------------------------------|
+|---------------------------------+----------------------------------------------------------------------------|
 | =hexo:run-server=                 | Open Hexo server process (posts only / posts + drafts)                     |
 | =hexo:stop-server=                | Stop Hexo server process                                                   |
 | =hexo:deploy=                     | Deploy                                                                     |
@@ -38,8 +38,8 @@ The following commands are available in =markdown-mode=, =dired-mode=, =hexo-mod
 
 The following commands are only available in =markdown-mode=
 
-| Command                            | Description                                                                        |
-|------------------------------------+------------------------------------------------------------------------------------|
+| Command                          | Description                                                                      |
+|----------------------------------+----------------------------------------------------------------------------------|
 | =hexo-insert-article-link=         | Insert a link to specific article in =_posts/=.                                    |
 | =hexo-update-current-article-date= | Update article's date stamp by current time. *This may change its permanent link!* |
 | =hexo-follow-post-link=            | Open the article file link under the cursor. <ex> =[Hello](/2016/05/hello/)=       |
@@ -48,37 +48,37 @@ The following commands are only available in =markdown-mode=
 
 The following commands & key-bindings are available in =hexo-mode=.
 
-| Command                           | Key         | Description                                                                |
-|-----------------------------------+-------------+----------------------------------------------------------------------------|
-| File                              |             |                                                                            |
-|-----------------------------------+-------------+----------------------------------------------------------------------------|
-| =hexo/open-file=                  | =RET=       | Open file                                                                  |
-| =hexo/show-article-info=          | =SPC=       | Show article info                                                          |
-| =hexo-new=                        | =n=         | Create file                                                                |
+| Command                         | Key     | Description                                                                |
+|---------------------------------+---------+----------------------------------------------------------------------------|
+| File                            |         |                                                                            |
+|---------------------------------+---------+----------------------------------------------------------------------------|
+| =hexo/open-file=                  | =RET=     | Open file                                                                  |
+| =hexo/show-article-info=          | =SPC=     | Show article info                                                          |
+| =hexo-new=                        | =n=       | Create file                                                                |
 | =hexo/rename-file=                | =R=, =[f2]= | Rename file                                                                |
-|-----------------------------------+-------------+----------------------------------------------------------------------------|
-| View                              |             |                                                                            |
-|-----------------------------------+-------------+----------------------------------------------------------------------------|
-| =revert-buffer=                   | =g=         | Refresh                                                                    |
-| =tabulated-list-sort=             | =S=         | Sort according to this column header                                       |
-| =hexo/filter-tag=                 | =f=         | Filter by tag                                                              |
-|-----------------------------------+-------------+----------------------------------------------------------------------------|
-| Edit                              |             |                                                                            |
-|-----------------------------------+-------------+----------------------------------------------------------------------------|
-| =hexo-toggle-article-status=      | =t s=       | Move file between =_posts/= and =_drafts/=                                 |
-| =hexo-touch-files-in-dir-by-time= | =t t=       | Touch all files by their timestamp to make files sortable in file-manager. |
-| =hexo/tags-edit=                  | =t a=       | Add / Remove tags                                                          |
-|-----------------------------------+-------------+----------------------------------------------------------------------------|
-| Server                            |             |                                                                            |
-|-----------------------------------+-------------+----------------------------------------------------------------------------|
-| =hexo:run-server=                 | =s r=       | Open Hexo server process (posts only / posts + drafts)                |
-| =hexo:stop-server=                | =s s=       | Stop Hexo server process                                                   |
-| =hexo:deploy=                     | =s d=       | Deploy                                                                     |
-|-----------------------------------+-------------+----------------------------------------------------------------------------|
-| Mode                              |             |                                                                            |
-|-----------------------------------+-------------+----------------------------------------------------------------------------|
+|---------------------------------+---------+----------------------------------------------------------------------------|
+| View                            |         |                                                                            |
+|---------------------------------+---------+----------------------------------------------------------------------------|
+| =revert-buffer=                   | =g=       | Refresh                                                                    |
+| =tabulated-list-sort=             | =S=       | Sort according to this column header                                       |
+| =hexo/filter-tag=                 | =f=       | Filter by tag                                                              |
+|---------------------------------+---------+----------------------------------------------------------------------------|
+| Edit                            |         |                                                                            |
+|---------------------------------+---------+----------------------------------------------------------------------------|
+| =hexo-toggle-article-status=      | =t s=     | Move file between =_posts/= and =_drafts/=                                     |
+| =hexo-touch-files-in-dir-by-time= | =t t=     | Touch all files by their timestamp to make files sortable in file-manager. |
+| =hexo/tags-edit=                  | =t a=     | Add / Remove tags                                                          |
+|---------------------------------+---------+----------------------------------------------------------------------------|
+| Server                          |         |                                                                            |
+|---------------------------------+---------+----------------------------------------------------------------------------|
+| =hexo:run-server=                 | =s r=     | Open Hexo server process (posts only / posts + drafts)                     |
+| =hexo:stop-server=                | =s s=     | Stop Hexo server process                                                   |
+| =hexo:deploy=                     | =s d=     | Deploy                                                                     |
+|---------------------------------+---------+----------------------------------------------------------------------------|
+| Mode                            |         |                                                                            |
+|---------------------------------+---------+----------------------------------------------------------------------------|
 | =hexo/help=                       | =h=, =?=    | Show key-binding cheat sheet                                               |
-| =kill-buffer-and-window=          | =Q=         | Quit                                                                       |
+| =kill-buffer-and-window=          | =Q=       | Quit                                                                       |
 
 
 * License
