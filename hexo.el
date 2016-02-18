@@ -1,5 +1,11 @@
-;; hexo.el - Major mode & tools for Hexo
-;; Author: kuanyui <azazabc123@gmail.com>
+;;; hexo.el --- Major mode & tools for Hexo      -*- lexical-binding: t; -*-
+
+;; Author: Ono Hiroko <azazabc123@gmail.com>
+;; Keywords: tools, fun
+;; Package-Requires: ((emacs "24.3"))
+;; X-URL: https://github.com/kuanyui/hexo.el
+;; Version: {{VERSION}}
+
 ;; License: MIT
 ;; Code:
 
@@ -20,10 +26,10 @@
   "Root directory of a hexo-mode buffer")
 (put 'hexo-root-dir 'permanent-local t)
 
-(defvar-local hexo--tabulated-list-entries-filter nil
+(defvar-local hexo-tabulated-list-entries-filter nil
   "Save a FUNCTION for filtering entries.
 See `hexo-setq-tabulated-list-entries'")
-(put 'hexo--tabulated-list-entries-filter 'permanent-local t)
+(put 'hexo-tabulated-list-entries-filter 'permanent-local t)
 
 (defvar hexo-process nil
   "Hexo process object")
@@ -190,6 +196,7 @@ If not found, try to `executable-find' hexo in your system."
   ;; provide only a hook called *before* revert.
   (interactive)
   (hexo-buffer-only
+   (setq hexo-tabulated-list-entries-filter nil) ; remove entries filter <ex> tag filter
    (tabulated-list-revert)              ; native revert function
    (tabulated-list-init-header)))       ; adjust column sizes
 
@@ -219,7 +226,7 @@ If not found, try to `executable-find' hexo in your system."
   "This function is used as a hook for `tabulated-list-revert-hook'.
 Also see: `hexo-generate-tabulated-list-entries'"
   (setq tabulated-list-entries
-        (hexo-generate-tabulated-list-entries hexo-root-dir hexo--tabulated-list-entries-filter)))
+        (hexo-generate-tabulated-list-entries hexo-root-dir hexo-tabulated-list-entries-filter)))
 
 (defun hexo-directory-files (dir-path)
   "The same as `directory-files', but remove:
@@ -363,7 +370,7 @@ KEY is a downcased symbol. <ex> 'status "
     (if win
         (select-window win)
       (switch-to-buffer buf))
-    (hexo-setq-tabulated-list-entries)
+    (hexo/revert-tabulated-list)
     (tabulated-list-print 'remember-pos)))
 
 ;; ======================================================
@@ -544,13 +551,15 @@ SUBEXP-DEPTH is 0 by default."
                                (hexo-get-all-tags "~/source-kuanyui.github.io/") nil t)))
      (if (string= "" tag)
          (message "No tag inputed, abort.")
-       ;; Assign variable `hexo--tabulated-list-entries-filter' as our filter function
-       (let ((hexo--tabulated-list-entries-filter (lambda (x) ;car is id (file-path), cdr is ([status ...])
-                                                    (let* ((info (hexo-get-article-info (car x)))
-                                                           (tags-list (cdr (assq 'tags info))))
-                                                      (member tag tags-list)))))
-         (tabulated-list-revert)
-         (hexo-message "Press %s to disable filter" "g"))))))
+       ;; Assign variable `hexo-tabulated-list-entries-filter' as our filter function
+       (progn (setq hexo-tabulated-list-entries-filter
+                    ;; Hallelujah lexical-binding!
+                    (lambda (x) ;car is id (file-path), cdr is ([status ...])
+                      (let* ((info (hexo-get-article-info (car x)))
+                             (tags-list (cdr (assq 'tags info))))
+                        (member tag tags-list))))
+              (tabulated-list-revert)
+              (hexo-message "Press %s to disable filter" "g"))))))
 
 ;; ======================================================
 ;; Universal Commands
