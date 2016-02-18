@@ -22,7 +22,7 @@
 
 (defvar-local hexo--tabulated-list-entries-filter nil
   "Save a FUNCTION for filtering entries.
-See `hexo-refresh'")
+See `hexo-setq-tabulated-list-entries'")
 (put 'hexo--tabulated-list-entries-filter 'permanent-local t)
 
 (defvar hexo-process nil
@@ -184,11 +184,11 @@ If not found, try to `executable-find' hexo in your system."
           ("Tags"  0 t)])
   (setq tabulated-list-sort-key '("Date" . t))
   (setq tabulated-list-padding 2)
-  (add-hook 'tabulated-list-revert-hook 'hexo-refresh nil t)
+  (add-hook 'tabulated-list-revert-hook 'hexo-setq-tabulated-list-entries nil t)
   (tabulated-list-init-header))
 
 
-(defun hexo-refresh ()
+(defun hexo-setq-tabulated-list-entries ()
   "This function is used as a hook for `tabulated-list-revert-hook'.
 Also see: `hexo-generate-tabulated-list-entries'"
   (setq tabulated-list-entries
@@ -335,7 +335,7 @@ KEY is a downcased symbol. <ex> 'status "
     (if win
         (select-window win)
       (switch-to-buffer buf))
-    (hexo-refresh)
+    (hexo-setq-tabulated-list-entries)
     (tabulated-list-print 'remember-pos)))
 
 ;; ======================================================
