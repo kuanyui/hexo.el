@@ -84,9 +84,30 @@
     (insert-file file-path)
     (buffer-string)))
 
-(defun hexo-write-file (file-path string)
-  "Overwrite the whole file content to STRING."
-  (with-temp-file file-path (insert string)))
+(defun hexo-overwrite-file-with-string (file-path string)
+  "Overwrite the whole file content to STRING.
+If the file has been opened, `save-buffer' it before overwriting.
+Return t if the file is writable, else nil."
+  (if (file-writable-p file-path)
+      (let ((file-buffer-obj (hexo-get-buffer-if-file-opened file-path)))
+        (if file-buffer-obj (with-current-buffer file-buffer-obj (save-buffer)))
+        (with-temp-file file-path (insert string))
+        (if file-buffer-obj (with-current-buffer file-buffer-obj (revert-buffer nil t t)))
+        t)
+    nil))
+
+(defun hexo-get-buffer-if-file-opened (file-path)
+  "If the FILE-PATH is opened by any buffer, return the buffer
+object."
+  (cdr (assoc (file-truename file-path)
+              (hexo-get-all-opened-files))))
+
+(defun hexo-get-all-opened-files ()
+  "Get all currently opened files in Emacs.
+Return ((FILE-PATH . BUFFER) ...)"
+  (remove-if (lambda (x) (null (car x)))
+             (mapcar (lambda (buf) (cons (buffer-file-name buf) buf))
+                     (buffer-list))))
 
 (defun hexo-get-file-head-lines (file-path &optional n)
   "Get the first N lines of a file as a list."
@@ -164,6 +185,7 @@ If not found, try to `executable-find' hexo in your system."
   (setq tabulated-list-padding 2)
   (add-hook 'tabulated-list-revert-hook 'hexo-refresh nil t)
   (tabulated-list-init-header))
+
 
 (defun hexo-refresh ()
   "See `hexo-generate-tabulated-list-entries'"
@@ -312,7 +334,6 @@ KEY is a downcased symbol. <ex> 'status "
         (select-window win)
       (switch-to-buffer buf))
     (hexo-refresh)
-    (delete-other-windows)
     (tabulated-list-print 'remember-pos)))
 
 ;; ======================================================
@@ -416,18 +437,22 @@ SUBEXP-DEPTH is 0 by default."
    (let* ((file-path (tabulated-list-get-id))
           (info (hexo-get-article-info file-path))
           (old-tags-list (cdr (assq 'tags info)))
-          (new-tags-list (hexo--edit-tags-iter old-tags-list (hexo-get-all-tags)))
-          (formatted-new-tags-list (hexo-format-tags-list new-tags-list))
-          (old-file-content (hexo-get-file-content-as-string file-path))
-          (new-file-content (with-temp-buffer
-                              (insert old-file-content)
-                              (goto-char (point-min))
-                              (re-search-forward "tags:.*" nil t)
-                              (replace-match (format "tags: %s" formatted-new-tags-list))
-                              (buffer-string))))
-     (hexo-write-file file-path new-file-content)
-     (revert-buffer)
+          (new-tags-list (hexo--edit-tags-iter old-tags-list (hexo-get-all-tags))))
+     (hexo-overwrite-tags-to-file file-path new-tags-list)
+     (tabulated-list-revert)
      (message "Done!"))))
+
+(defun hexo-overwrite-tags-to-file (file-path tags-list)
+  "TAGS-LIST is a string list"
+  (let* ((formatted-tags-list (hexo-format-tags-list tags-list))
+         (old-file-content (hexo-get-file-content-as-string file-path))
+         (new-file-content (with-temp-buffer
+                             (insert old-file-content)
+                             (goto-char (point-min))
+                             (re-search-forward "tags:.*" nil t)
+                             (replace-match (format "tags: %s" formatted-tags-list))
+                             (buffer-string))))
+    (hexo-overwrite-file-with-string file-path new-file-content)))
 
 (defun hexo-get-all-tags (&optional root-dir)
   (hexo-sort-string-list
