@@ -21,7 +21,8 @@
 (put 'hexo-root-dir 'permanent-local t)
 
 (defvar-local hexo--tabulated-list-entries-filter nil
-  "Function for filtering entries")
+  "Save a FUNCTION for filtering entries.
+See `hexo-refresh'")
 (put 'hexo--tabulated-list-entries-filter 'permanent-local t)
 
 (defvar hexo-process nil
@@ -188,7 +189,8 @@ If not found, try to `executable-find' hexo in your system."
 
 
 (defun hexo-refresh ()
-  "See `hexo-generate-tabulated-list-entries'"
+  "This function is used as a hook for `tabulated-list-revert-hook'.
+Also see: `hexo-generate-tabulated-list-entries'"
   (setq tabulated-list-entries
         (hexo-generate-tabulated-list-entries hexo-root-dir hexo--tabulated-list-entries-filter)))
 
@@ -598,7 +600,7 @@ You can run this function in dired or a hexo article."
            (if new-path
                (progn (find-alternate-file new-path)
                       (hexo-message "Now this file is in '%s'"
-                                 (hexo-get-article-parent-dir-name new-path)))
+                                    (hexo-get-article-parent-dir-name new-path)))
              (message "Two filenames duplicated in _posts/ and _drafts/. Abort."))))
         ((and (eq major-mode 'dired-mode)
               (hexo-find-root-dir)
