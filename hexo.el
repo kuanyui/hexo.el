@@ -389,7 +389,7 @@ KEY is a downcased symbol. <ex> 'status "
 (define-key hexo-mode-map (kbd "t") nil)
 (define-key hexo-mode-map (kbd "t s") 'hexo-toggle-article-status)
 (define-key hexo-mode-map (kbd "t t") 'hexo-touch-files-in-dir-by-time)
-(define-key hexo-mode-map (kbd "t a") 'hexo/tags-edit)
+(define-key hexo-mode-map (kbd "t a") 'hexo/edit-single-file-tags)
 (define-key hexo-mode-map (kbd "f") 'hexo/filter-tag)
 (define-key hexo-mode-map (kbd "R") 'hexo/rename-file)
 (define-key hexo-mode-map (kbd "<f2>") 'hexo/rename-file)
@@ -478,12 +478,15 @@ SUBEXP-DEPTH is 0 by default."
                     (message "Rename successful!"))))
        (message "Rename cancelled.")))))
 
-(defun hexo/tags-edit ()
+(defun hexo-get-article-tags-list (file-path)
+  (let ((info (hexo-get-article-info file-path)))
+    (cdr (assq 'tags info))))
+
+(defun hexo/edit-single-file-tags ()
   (interactive)
   (hexo-buffer-only
    (let* ((file-path (tabulated-list-get-id))
-          (info (hexo-get-article-info file-path))
-          (old-tags-list (cdr (assq 'tags info)))
+          (old-tags-list (hexo-get-article-tags-list file-path))
           (new-tags-list (hexo--edit-tags-iter old-tags-list (hexo-get-all-tags))))
      (hexo-overwrite-tags-to-file file-path new-tags-list)
      (tabulated-list-revert)
