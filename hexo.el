@@ -388,8 +388,9 @@ KEY is a downcased symbol. <ex> 'status "
 (define-key hexo-mode-map (kbd "N") 'hexo-new)
 (define-key hexo-mode-map (kbd "t") nil)
 (define-key hexo-mode-map (kbd "t s") 'hexo-toggle-article-status)
-(define-key hexo-mode-map (kbd "t t") 'hexo-touch-files-in-dir-by-time)
-(define-key hexo-mode-map (kbd "t a") 'hexo/edit-single-file-tags)
+(define-key hexo-mode-map (kbd "t T") 'hexo-touch-files-in-dir-by-time)
+(define-key hexo-mode-map (kbd "t t") 'hexo/edit-single-file-tags)
+(define-key hexo-mode-map (kbd "t a") 'hexo/add-tags)
 (define-key hexo-mode-map (kbd "f") 'hexo/filter-tag)
 (define-key hexo-mode-map (kbd "R") 'hexo/rename-file)
 (define-key hexo-mode-map (kbd "<f2>") 'hexo/rename-file)
@@ -492,6 +493,46 @@ SUBEXP-DEPTH is 0 by default."
      (tabulated-list-revert)
      (message "Done!"))))
 
+(defun hexo-read-tags-list (all-tags &optional selected-tags)
+  ;;[TODO] SELECTED-TAGS may rename to INIT-TAGS
+  "Interactively ask user for a tags list SELECTED-TAGS"
+  (interactive)
+  (hexo-repo-only
+   (let* ((tag (ido-completing-read
+                (format "Add / Remove Tags (C-j to apply) :\n Current tags => %s\n"
+                        (hexo-format-tags-list selected-tags))
+                all-tags nil nil)))
+     (cond ((string= "" tag)
+            selected-tags)
+           ((member tag selected-tags)
+            (hexo-read-tags-list all-tags (remove tag selected-tags)))
+           (t
+            (hexo-read-tags-list (hexo-remove-duplicates-in-string-list (cons tag all-tags))
+                                 (cons tag selected-tags)))))))
+
+(defun hexo-merge-string-list (list1 list2)
+  "Return a sorted string list"
+  (hexo-sort-string-list
+   (hexo-remove-duplicates-in-string-list (append list1 list2))))
+
+(defun hexo/add-tags ()
+  (interactive)
+  ;;(hexo-buffer-only
+  (let ((tags-list (hexo-read-tags-list (hexo-get-all-tags)))
+        (files-list (hexo-get-marked-files-path)))
+    (if files-list
+        (mapc (lambda (file-path)
+                (hexo-overwrite-tags-to-file file-path
+                                             (hexo-merge-string-list tags-list
+                                                                     (hexo-get-article-tags-list file-path))))
+              files-list)
+      (hexo-overwrite-tags-to-file (tabulated-list-get-id)
+                                   (hexo-merge-string-list tags-list
+                                                           (hexo-get-article-tags-list (tabulated-list-get-id)))))
+    (tabulated-list-revert)))
+
+
+
 (defun hexo-overwrite-tags-to-file (file-path tags-list)
   "TAGS-LIST is a string list"
   (let* ((formatted-tags-list (hexo-format-tags-list tags-list))
@@ -584,16 +625,15 @@ SUBEXP-DEPTH is 0 by default."
    (tabulated-list-put-tag "  " t)))
 
 (defun hexo-get-marked-files-path ()
-  (if (not (eq major-mode 'hexo-mode))
-      (error "`hexo-get-marked-files-path' should be called in `hexo-mode'")
+  (with-current-buffer "*Hexo*"
+    (goto-char (point-min))
     (let (file-pathes)
-      (save-excursion (goto-char (point-min))
-                      (while (not (eobp))
-                        (cond ((eq (char-after (1+ (point))) ?m)
-                               (push (tabulated-list-get-id) file-pathes)
-                               (next-line))
-                              (t
-                               (next-line)))))
+      (while (not (eobp))
+        (cond ((eq (char-after (1+ (point))) ?m)
+               (push (tabulated-list-get-id) file-pathes)
+               (forward-line))
+              (t
+               (forward-line))))
       file-pathes)))
 
 
@@ -884,5 +924,7 @@ This is only resonable for files in _posts/."
              (kill-buffer hexo-process-buffer-name)
              (message "Server stopped ~!"))
     (message "No active server found")))
+
+
 
 (provide 'hexo)
