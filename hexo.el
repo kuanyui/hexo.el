@@ -358,6 +358,7 @@ KEY is a downcased symbol. <ex> 'status "
           (hexo-mode))
       (with-current-buffer buf          ;not under a hexo repo
         (setq hexo-root-dir (hexo-ask-for-root-dir))
+        (cd hexo-root-dir)
         (hexo-mode)))
     (if win
         (select-window win)
