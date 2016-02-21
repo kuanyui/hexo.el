@@ -507,16 +507,16 @@ SUBEXP-DEPTH is 0 by default."
   (interactive)
   (hexo-repo-only
    (let* ((tag (ido-completing-read
-                (format "Add / Remove Tags (C-j to apply) :\n Current tags => %s\n"
+                (format "Add / Remove Tags (C-j to apply or create tag) :\n Current tags => %s\n"
                         (hexo-format-tags-list selected-tags))
                 all-tags nil nil)))
      (cond ((string= "" tag)
             selected-tags)
            ((member tag selected-tags)
             (hexo-ask-for-tags-list all-tags (remove tag selected-tags)))
-           (t
+           (t                           ;create new tag
             (hexo-ask-for-tags-list (hexo-remove-duplicates-in-string-list (cons tag all-tags))
-                                 (cons tag selected-tags)))))))
+                                    (cons tag selected-tags)))))))
 
 (defun hexo-merge-string-list (list1 list2)
   "Return a sorted string list"
@@ -939,7 +939,6 @@ This is only resonable for files in _posts/."
              (kill-buffer hexo-process-buffer-name)
              (message "Server stopped ~!"))
     (message "No active server found")))
-
 
 
 (provide 'hexo)
