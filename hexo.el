@@ -384,9 +384,9 @@ KEY is a downcased symbol. <ex> 'status "
 ;; ======================================================
 
 ;;;;; Prefix
-(define-key hexo-mode-map (kbd "t") nil)
 (define-key hexo-mode-map (kbd "T") nil)
 (define-key hexo-mode-map (kbd "s") nil)
+(define-key hexo-mode-map (kbd "M") nil)
 ;; Files
 (define-key hexo-mode-map (kbd "RET") 'hexo/open-file)
 (define-key hexo-mode-map (kbd "SPC") 'hexo/show-article-info)
@@ -400,7 +400,7 @@ KEY is a downcased symbol. <ex> 'status "
 ;; Edit
 (define-key hexo-mode-map (kbd "T T") 'hexo-touch-files-in-dir-by-time)
 (define-key hexo-mode-map (kbd "T S") 'hexo-toggle-article-status)
-(define-key hexo-mode-map (kbd "t t") 'hexo/edit-single-file-tags)
+(define-key hexo-mode-map (kbd "t") 'hexo/edit-single-file-tags)
 ;; Marks
 (define-key hexo-mode-map (kbd "m") 'hexo/mark)
 (define-key hexo-mode-map (kbd "u") 'hexo/unmark)
@@ -423,7 +423,7 @@ KEY is a downcased symbol. <ex> 'status "
                       "File             View              Edit                 Mark                      Server             Mode\n" 'face 'header-line)
                      "[RET] Open       [  g] Refresh     [T T] Touch time     [  m] Mark                [s r] Run server   [  ?] Show this help\n"
                      "[SPC] Show Info  [  S] Sort        [T S] Toggle status  [  u] Unmark              [s s] Stop server  [  Q] Quit\n"
-                     "[  N] New        [  f] Filter tag  [t t] Toggle tags    [M a] Add tags to marked  [s d] Deploy\n"
+                     "[  N] New        [  f] Filter tag  [  t] Toggle tags    [M a] Add tags to marked  [s d] Deploy\n"
                      "[  R] Rename                                            [M r] Rmv tags to marked"))
           (help-str-without-brackets (replace-regexp-in-string "[][]" " " help-str 'fixedcase)))
      (mapc (lambda (begin-end)
