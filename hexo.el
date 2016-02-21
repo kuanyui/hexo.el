@@ -526,21 +526,23 @@ SUBEXP-DEPTH is 0 by default."
 (defun hexo/add-tags ()
   (interactive)
   (hexo-buffer-only
-   (let ((adding-tags (hexo-ask-for-tags-list (hexo-get-all-tags)))
-         (files-list (hexo-get-marked-files-path)))
-     (if files-list
+   (let ((marked-files (hexo-get-marked-files-path)))
+     (if marked-files
          ;; Multiple files
-         (mapc (lambda (file)
-                 (let ((merged-tags-for-this-file (hexo-merge-string-list adding-tags (hexo-get-article-tags-list file))))
-                   (hexo-overwrite-tags-to-file file merged-tags-for-this-file)))
-               files-list)
+         (let ((adding-tags (hexo-ask-for-tags-list (hexo-get-all-tags))))
+           (mapc (lambda (file)
+                   (let ((merged-tags-for-this-file (hexo-merge-string-list adding-tags (hexo-get-article-tags-list file))))
+                     (hexo-overwrite-tags-to-file file merged-tags-for-this-file)))
+                 marked-files)
+           (tabulated-list-revert))
        ;; Single file
        (hexo-mode-article-only
         (let* ((file-path (tabulated-list-get-id))
+               (adding-tags (hexo-ask-for-tags-list (hexo-get-all-tags)))
                (merged-tags-for-this-file (hexo-merge-string-list adding-tags (hexo-get-article-tags-list file-path))))
-          (hexo-overwrite-tags-to-file file-path merged-tags-for-this-file)))
-       (tabulated-list-revert)))))
-  
+          (hexo-overwrite-tags-to-file file-path merged-tags-for-this-file)
+          (tabulated-list-revert)))
+       ))))
 
 (defun hexo-overwrite-tags-to-file (file-path tags-list)
   "TAGS-LIST is a string list"
