@@ -404,8 +404,8 @@ KEY is a downcased symbol. <ex> 'status "
 ;; Marks
 (define-key hexo-mode-map (kbd "m") 'hexo/mark)
 (define-key hexo-mode-map (kbd "u") 'hexo/unmark)
-(define-key hexo-mode-map (kbd "M a") 'hexo/append-tags)
-(define-key hexo-mode-map (kbd "M s") 'hexo/substract-tags)
+(define-key hexo-mode-map (kbd "M a") 'hexo/add-tags)
+(define-key hexo-mode-map (kbd "M r") 'hexo/remove-tags)
 ;; Server
 (define-key hexo-mode-map (kbd "s r") 'hexo:run-server)
 (define-key hexo-mode-map (kbd "s s") 'hexo:stop-server)
@@ -414,6 +414,7 @@ KEY is a downcased symbol. <ex> 'status "
 (define-key hexo-mode-map (kbd "h") 'hexo/help)
 (define-key hexo-mode-map (kbd "?") 'hexo/help)
 (define-key hexo-mode-map (kbd "Q") 'kill-buffer-and-window)
+
 
 (defun hexo/help ()
   (interactive)
@@ -540,7 +541,7 @@ SUBEXP-DEPTH is 0 by default."
    (remove-if (lambda (x) (member x subset-list))
               list)))
 
-(defun hexo/append-tags ()
+(defun hexo/add-tags ()
   (interactive)
   (hexo-mode-only
    (let ((marked-files (hexo-get-marked-files-path)))
@@ -565,7 +566,7 @@ SUBEXP-DEPTH is 0 by default."
           (tabulated-list-revert)))
        ))))
 
-(defun hexo/substract-tags ()
+(defun hexo/remove-tags ()
   (interactive)
   (hexo-mode-only
    (let ((marked-files (hexo-get-marked-files-path)))
