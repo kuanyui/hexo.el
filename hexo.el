@@ -1,18 +1,28 @@
 ;;; hexo.el --- Major mode & tools for Hexo      -*- lexical-binding: t; -*-
 
 ;; Author: Ono Hiroko <azazabc123@gmail.com>
-;; Keywords: tools, fun
+;; Keywords: tools, hexo
 ;; Package-Requires: ((emacs "24.3"))
 ;; X-URL: https://github.com/kuanyui/hexo.el
 ;; Version: {{VERSION}}
 
 ;; License: MIT
+;; Ono Hiroko (kuanyui) (c) Copyright 2016
+
+;;; Commentary:
+;;
+;; Screenshots & Documents are available on
+;; https://github.com/kuanyui/hexo.el
+
+;; Use Hexo elegantly in Emacs.
+;;
+;; To start, M-x hexo. Press h to get help
+
 ;; Code:
 
 (require 'cl)
 (require 'tabulated-list)
 (require 'ido)
-(require 'ansi-color)
 
 (defgroup hexo nil
   "Manage Hexo with Emacs"
