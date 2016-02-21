@@ -527,6 +527,12 @@ SUBEXP-DEPTH is 0 by default."
   (hexo-sort-string-list
    (hexo-remove-duplicates-in-string-list (append list1 list2))))
 
+(defun hexo-substract-string-list (list subset-list)
+  "Return ( LIST - SUBSET-LIST )"
+  (hexo-sort-string-list
+   (remove-if (lambda (x) (member x subset-list))
+              list)))
+
 (defun hexo/append-tags ()
   (interactive)
   (hexo-mode-only
@@ -535,7 +541,7 @@ SUBEXP-DEPTH is 0 by default."
          ;; Multiple files
          (let ((adding-tags (hexo-ask-for-tags-list (hexo-get-all-tags)
                                                     nil
-                                                    (format "Append tags to %s articles" (length marked-files)))))
+                                                    (format "Append what tags to %s articles?" (length marked-files)))))
            (mapc (lambda (file)
                    (let ((merged-tags-for-this-file (hexo-merge-string-list adding-tags (hexo-get-article-tags-list file))))
                      (hexo-overwrite-tags-to-file file merged-tags-for-this-file)))
@@ -546,7 +552,7 @@ SUBEXP-DEPTH is 0 by default."
         (let* ((file-path (tabulated-list-get-id))
                (adding-tags (hexo-ask-for-tags-list (hexo-get-all-tags)
                                                     nil
-                                                    "Append tags to this article"))
+                                                    "Append what tags to this article? "))
                (merged-tags-for-this-file (hexo-merge-string-list adding-tags (hexo-get-article-tags-list file-path))))
           (hexo-overwrite-tags-to-file file-path merged-tags-for-this-file)
           (tabulated-list-revert)))
@@ -558,21 +564,24 @@ SUBEXP-DEPTH is 0 by default."
    (let ((marked-files (hexo-get-marked-files-path)))
      (if marked-files
          ;; Multiple files
-         (let ((adding-tags (hexo-ask-for-tags-list (hexo-get-all-tags))))
+         (let ((will-remove-tags (hexo-ask-for-tags-list (hexo-get-all-tags-in-files marked-files)
+                                                         nil
+                                                         (format "Substract what tags in %s articles? " (length marked-files)))))
            (mapc (lambda (file)
-                   (let ((merged-tags-for-this-file (hexo-merge-string-list adding-tags (hexo-get-article-tags-list file))))
-                     (hexo-overwrite-tags-to-file file merged-tags-for-this-file)))
+                   (let ((tags-for-this-file (hexo-substract-string-list (hexo-get-article-tags-list file) will-remove-tags)))
+                     (hexo-overwrite-tags-to-file file tags-for-this-file)))
                  marked-files)
            (tabulated-list-revert))
        ;; Single file
        (hexo-mode-article-only
         (let* ((file-path (tabulated-list-get-id))
-               (adding-tags (hexo-ask-for-tags-list (hexo-get-all-tags)))
-               (merged-tags-for-this-file (hexo-merge-string-list adding-tags (hexo-get-article-tags-list file-path))))
-          (hexo-overwrite-tags-to-file file-path merged-tags-for-this-file)
+               (will-remove-tags (hexo-ask-for-tags-list (hexo-get-all-tags-in-files (list file-path))
+                                                         nil
+                                                         "Remove what tags from this article? "))
+               (tags-for-this-file (hexo-substract-string-list (hexo-get-article-tags-list file-path) will-remove-tags )))
+          (hexo-overwrite-tags-to-file file-path tags-for-this-file)
           (tabulated-list-revert)))
-       )))
-  )
+       ))))
 
 (defun hexo-overwrite-tags-to-file (file-path tags-list)
   "TAGS-LIST is a string list"
@@ -592,6 +601,13 @@ SUBEXP-DEPTH is 0 by default."
     (mapcan (lambda (file-path)
               (cdr (assq 'tags (hexo-get-article-info file-path))))
             (hexo-get-all-article-files root-dir 'include-drafts)))))
+
+(defun hexo-get-all-tags-in-files (&optional files-list)
+  (hexo-sort-string-list
+   (hexo-remove-duplicates-in-string-list
+    (mapcan (lambda (file-path)
+              (cdr (assq 'tags (hexo-get-article-info file-path))))
+            files-list))))
 
 (defun hexo--edit-tags-iter (this-file-tags-list all-tags)
   (let ((tag (ido-completing-read
