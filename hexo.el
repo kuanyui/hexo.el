@@ -400,7 +400,7 @@ KEY is a downcased symbol. <ex> 'status "
 ;; Edit
 (define-key hexo-mode-map (kbd "T T") 'hexo-touch-files-in-dir-by-time)
 (define-key hexo-mode-map (kbd "T S") 'hexo-toggle-article-status)
-(define-key hexo-mode-map (kbd "t") 'hexo/edit-single-file-tags)
+(define-key hexo-mode-map (kbd "t") 'hexo/tags-toggler)
 ;; Marks
 (define-key hexo-mode-map (kbd "m") 'hexo/mark)
 (define-key hexo-mode-map (kbd "u") 'hexo/unmark)
@@ -499,7 +499,7 @@ SUBEXP-DEPTH is 0 by default."
   (let ((info (hexo-get-article-info file-path)))
     (cdr (assq 'tags info))))
 
-(defun hexo/edit-single-file-tags ()
+(defun hexo/tags-toggler ()
   (interactive)
   (hexo-mode-only
    (hexo-mode-article-only
@@ -556,14 +556,8 @@ SUBEXP-DEPTH is 0 by default."
                  marked-files)
            (tabulated-list-revert))
        ;; Single file
-       (hexo-mode-article-only
-        (let* ((file-path (tabulated-list-get-id))
-               (adding-tags (hexo-ask-for-tags-list (hexo-get-all-tags)
-                                                    nil
-                                                    "Append what tags to this article? "))
-               (merged-tags-for-this-file (hexo-merge-string-list adding-tags (hexo-get-article-tags-list file-path))))
-          (hexo-overwrite-tags-to-file file-path merged-tags-for-this-file)
-          (tabulated-list-revert)))
+       (message "Please mark files first (press m).
+If you want to edit the tags of a single file, use hexo/tags-toggler (press t) instead.")
        ))))
 
 (defun hexo/remove-tags ()
@@ -581,14 +575,8 @@ SUBEXP-DEPTH is 0 by default."
                  marked-files)
            (tabulated-list-revert))
        ;; Single file
-       (hexo-mode-article-only
-        (let* ((file-path (tabulated-list-get-id))
-               (will-remove-tags (hexo-ask-for-tags-list (hexo-get-all-tags-in-files (list file-path))
-                                                         nil
-                                                         "Remove what tags from this article? "))
-               (tags-for-this-file (hexo-substract-string-list (hexo-get-article-tags-list file-path) will-remove-tags )))
-          (hexo-overwrite-tags-to-file file-path tags-for-this-file)
-          (tabulated-list-revert)))
+       (message "Please mark files first (press m).
+If you want to edit the tags of a single file, use hexo/tags-toggler (press t) instead.")
        ))))
 
 (defun hexo-overwrite-tags-to-file (file-path tags-list)
