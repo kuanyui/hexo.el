@@ -444,6 +444,11 @@ SUBEXP-DEPTH is 0 by default."
        (progn ,@body)
      (message "Please run his command in `hexo-mode' buffer (M-x `hexo').")))
 
+(defmacro hexo-mode-article-only (&rest body)
+  `(if (tabulated-list-get-id)
+       (progn ,@body)
+     (message "No article found at this position.")))
+
 (defmacro hexo-repo-only (&rest body)
   `(let ((dir (or hexo-root-dir (hexo-find-root-dir))))
      (if dir
@@ -453,31 +458,33 @@ SUBEXP-DEPTH is 0 by default."
 (defun hexo/open-file ()
   (interactive)
   (hexo-buffer-only
-   (find-file (tabulated-list-get-id))))
+   (hexo-mode-article-only
+    (find-file (tabulated-list-get-id)))))
 
 (defun hexo/rename-file (&optional init-value)
   (interactive)
   (hexo-buffer-only
-   (let ((status (hexo-get-attribute-in-file-entry 'status (tabulated-list-get-entry))))
-     (if (or (equal status "draft")
-             (and (equal status "post")
-                  (yes-or-no-p "This article is a post instead a draft.\nRenaming it may change its permanemt link. Continue?")))
-         (let* ((original-file-path (tabulated-list-get-id))
-                (pwd (file-name-directory original-file-path))
-                (original-name-without-ext (or init-value (file-name-base original-file-path)))
-                (new-name-without-ext (read-from-minibuffer
-                                       (format "Rename '%s' to: " original-name-without-ext)
-                                       original-name-without-ext))
-                (new-file-path (format "%s/%s.md" pwd new-name-without-ext)))
-           (if (file-exists-p new-file-path)
-               (progn (hexo-message "Filename '%s' already existed. Please try another name." new-name-without-ext)
-                      (sit-for 5)
-                      (hexo/rename-file new-name-without-ext))
-             (progn (rename-file original-file-path new-file-path)
-                    (revert-buffer)
-                    (search-forward new-name-without-ext)
-                    (message "Rename successful!"))))
-       (message "Rename cancelled.")))))
+   (hexo-mode-article-only
+    (let ((status (hexo-get-attribute-in-file-entry 'status (tabulated-list-get-entry))))
+      (if (or (equal status "draft")
+              (and (equal status "post")
+                   (yes-or-no-p "This article is a post instead a draft.\nRenaming it may change its permanemt link. Continue?")))
+          (let* ((original-file-path (tabulated-list-get-id))
+                 (pwd (file-name-directory original-file-path))
+                 (original-name-without-ext (or init-value (file-name-base original-file-path)))
+                 (new-name-without-ext (read-from-minibuffer
+                                        (format "Rename '%s' to: " original-name-without-ext)
+                                        original-name-without-ext))
+                 (new-file-path (format "%s/%s.md" pwd new-name-without-ext)))
+            (if (file-exists-p new-file-path)
+                (progn (hexo-message "Filename '%s' already existed. Please try another name." new-name-without-ext)
+                       (sit-for 5)
+                       (hexo/rename-file new-name-without-ext))
+              (progn (rename-file original-file-path new-file-path)
+                     (revert-buffer)
+                     (search-forward new-name-without-ext)
+                     (message "Rename successful!"))))
+        (message "Rename cancelled."))))))
 
 (defun hexo-get-article-tags-list (file-path)
   (let ((info (hexo-get-article-info file-path)))
@@ -486,14 +493,15 @@ SUBEXP-DEPTH is 0 by default."
 (defun hexo/edit-single-file-tags ()
   (interactive)
   (hexo-buffer-only
-   (let* ((file-path (tabulated-list-get-id))
-          (old-tags-list (hexo-get-article-tags-list file-path))
-          (new-tags-list (hexo--edit-tags-iter old-tags-list (hexo-get-all-tags))))
-     (hexo-overwrite-tags-to-file file-path new-tags-list)
-     (tabulated-list-revert)
-     (message "Done!"))))
+   (hexo-mode-article-only
+    (let* ((file-path (tabulated-list-get-id))
+           (old-tags-list (hexo-get-article-tags-list file-path))
+           (new-tags-list (hexo--edit-tags-iter old-tags-list (hexo-get-all-tags))))
+      (hexo-overwrite-tags-to-file file-path new-tags-list)
+      (tabulated-list-revert)
+      (message "Done!")))))
 
-(defun hexo-read-tags-list (all-tags &optional selected-tags)
+(defun hexo-ask-for-tags-list (all-tags &optional selected-tags)
   ;;[TODO] SELECTED-TAGS may rename to INIT-TAGS
   "Interactively ask user for a tags list SELECTED-TAGS"
   (interactive)
@@ -505,9 +513,9 @@ SUBEXP-DEPTH is 0 by default."
      (cond ((string= "" tag)
             selected-tags)
            ((member tag selected-tags)
-            (hexo-read-tags-list all-tags (remove tag selected-tags)))
+            (hexo-ask-for-tags-list all-tags (remove tag selected-tags)))
            (t
-            (hexo-read-tags-list (hexo-remove-duplicates-in-string-list (cons tag all-tags))
+            (hexo-ask-for-tags-list (hexo-remove-duplicates-in-string-list (cons tag all-tags))
                                  (cons tag selected-tags)))))))
 
 (defun hexo-merge-string-list (list1 list2)
@@ -517,21 +525,22 @@ SUBEXP-DEPTH is 0 by default."
 
 (defun hexo/add-tags ()
   (interactive)
-  ;;(hexo-buffer-only
-  (let ((tags-list (hexo-read-tags-list (hexo-get-all-tags)))
-        (files-list (hexo-get-marked-files-path)))
-    (if files-list
-        (mapc (lambda (file-path)
-                (hexo-overwrite-tags-to-file file-path
-                                             (hexo-merge-string-list tags-list
-                                                                     (hexo-get-article-tags-list file-path))))
-              files-list)
-      (hexo-overwrite-tags-to-file (tabulated-list-get-id)
-                                   (hexo-merge-string-list tags-list
-                                                           (hexo-get-article-tags-list (tabulated-list-get-id)))))
-    (tabulated-list-revert)))
-
-
+  (hexo-buffer-only
+   (let ((adding-tags (hexo-ask-for-tags-list (hexo-get-all-tags)))
+         (files-list (hexo-get-marked-files-path)))
+     (if files-list
+         ;; Multiple files
+         (mapc (lambda (file)
+                 (let ((merged-tags-for-this-file (hexo-merge-string-list adding-tags (hexo-get-article-tags-list file))))
+                   (hexo-overwrite-tags-to-file file merged-tags-for-this-file)))
+               files-list)
+       ;; Single file
+       (hexo-mode-article-only
+        (let* ((file-path (tabulated-list-get-id))
+               (merged-tags-for-this-file (hexo-merge-string-list adding-tags (hexo-get-article-tags-list file-path))))
+          (hexo-overwrite-tags-to-file file-path merged-tags-for-this-file)))
+       (tabulated-list-revert)))))
+  
 
 (defun hexo-overwrite-tags-to-file (file-path tags-list)
   "TAGS-LIST is a string list"
@@ -572,8 +581,9 @@ SUBEXP-DEPTH is 0 by default."
 (defun hexo/show-article-info ()
   (interactive)
   (hexo-buffer-only
-   (let ((formatted-file-entry (hexo-format-file-entry (tabulated-list-get-entry))))
-     (message formatted-file-entry))))
+   (hexo-mode-article-only
+    (let ((formatted-file-entry (hexo-format-file-entry (tabulated-list-get-entry))))
+      (message formatted-file-entry)))))
 
 (defun hexo-format-file-entry (file-entry)
   "FILE-ENTRY is a `vector'. See `hexo-get-attribute-in-file-entry'
@@ -617,24 +627,27 @@ SUBEXP-DEPTH is 0 by default."
 (defun hexo/mark ()
   (interactive)
   (hexo-buffer-only
-   (tabulated-list-put-tag (propertize " m" 'face 'hexo-mark) t)))
+   (hexo-mode-article-only
+    (tabulated-list-put-tag (propertize " m" 'face 'hexo-mark) t))))
 
 (defun hexo/unmark ()
   (interactive)
   (hexo-buffer-only
-   (tabulated-list-put-tag "  " t)))
+   (hexo-mode-article-only
+    (tabulated-list-put-tag "  " t))))
 
 (defun hexo-get-marked-files-path ()
   (with-current-buffer "*Hexo*"
-    (goto-char (point-min))
-    (let (file-pathes)
-      (while (not (eobp))
-        (cond ((eq (char-after (1+ (point))) ?m)
-               (push (tabulated-list-get-id) file-pathes)
-               (forward-line))
-              (t
-               (forward-line))))
-      file-pathes)))
+    (save-excursion
+      (goto-char (point-min))
+      (let (file-pathes)
+        (while (not (eobp))
+          (cond ((eq (char-after (1+ (point))) ?m)
+                 (push (tabulated-list-get-id) file-pathes)
+                 (forward-line))
+                (t
+                 (forward-line))))
+        file-pathes))))
 
 
 ;; ======================================================
