@@ -383,41 +383,48 @@ KEY is a downcased symbol. <ex> 'status "
 ;; Commands for hexo-mode only
 ;; ======================================================
 
+;;;;; Prefix
+(define-key hexo-mode-map (kbd "t") nil)
+(define-key hexo-mode-map (kbd "T") nil)
+(define-key hexo-mode-map (kbd "s") nil)
+;; Files
 (define-key hexo-mode-map (kbd "RET") 'hexo/open-file)
 (define-key hexo-mode-map (kbd "SPC") 'hexo/show-article-info)
 (define-key hexo-mode-map (kbd "N") 'hexo-new)
-(define-key hexo-mode-map (kbd "t") nil)
-(define-key hexo-mode-map (kbd "T s") 'hexo-toggle-article-status)
-(define-key hexo-mode-map (kbd "T T") 'hexo-touch-files-in-dir-by-time)
-(define-key hexo-mode-map (kbd "t t") 'hexo/edit-single-file-tags)
-(define-key hexo-mode-map (kbd "t a") 'hexo/append-tags)
-(define-key hexo-mode-map (kbd "t s") 'hexo/substract-tags)
-(define-key hexo-mode-map (kbd "f") 'hexo/filter-tag)
 (define-key hexo-mode-map (kbd "R") 'hexo/rename-file)
 (define-key hexo-mode-map (kbd "<f2>") 'hexo/rename-file)
-(define-key hexo-mode-map (kbd "h") 'hexo/help)
-(define-key hexo-mode-map (kbd "?") 'hexo/help)
+;; View
+(define-key hexo-mode-map (kbd "g") 'hexo/revert-tabulated-list)
 (define-key hexo-mode-map (kbd "S") 'tabulated-list-sort)
-(define-key hexo-mode-map (kbd "s") nil)
+(define-key hexo-mode-map (kbd "f") 'hexo/filter-tag)
+;; Edit
+(define-key hexo-mode-map (kbd "T T") 'hexo-touch-files-in-dir-by-time)
+(define-key hexo-mode-map (kbd "T S") 'hexo-toggle-article-status)
+(define-key hexo-mode-map (kbd "t t") 'hexo/edit-single-file-tags)
+;; Marks
+(define-key hexo-mode-map (kbd "m") 'hexo/mark)
+(define-key hexo-mode-map (kbd "u") 'hexo/unmark)
+(define-key hexo-mode-map (kbd "M a") 'hexo/append-tags)
+(define-key hexo-mode-map (kbd "M s") 'hexo/substract-tags)
+;; Server
 (define-key hexo-mode-map (kbd "s r") 'hexo:run-server)
 (define-key hexo-mode-map (kbd "s s") 'hexo:stop-server)
 (define-key hexo-mode-map (kbd "s d") 'hexo:deploy)
+;; Modes
+(define-key hexo-mode-map (kbd "h") 'hexo/help)
+(define-key hexo-mode-map (kbd "?") 'hexo/help)
 (define-key hexo-mode-map (kbd "Q") 'kill-buffer-and-window)
-(define-key hexo-mode-map (kbd "g") 'hexo/revert-tabulated-list)
-(define-key hexo-mode-map (kbd "m") 'hexo/mark)
-(define-key hexo-mode-map (kbd "u") 'hexo/unmark)
-
 
 (defun hexo/help ()
   (interactive)
   (hexo-mode-only
    (let* ((help-str (concat
                      (propertize
-                      "File             View              Edit                 Server             Mode\n" 'face 'header-line)
-                     "[RET] Open       [  g] Refresh     [t t] Touch time     [s r] Run server   [  ?] Show this help\n"
-                     "[SPC] Show Info  [  S] Sort        [t s] Toggle status  [s s] Stop server  [  Q] Quit\n"
-                     "[  N] New        [  f] Filter tag  [t a] Edit Tags      [s d] Deploy\n"
-                     "[  R] Rename"))
+                      "File             View              Edit                 Mark                      Server             Mode\n" 'face 'header-line)
+                     "[RET] Open       [  g] Refresh     [T T] Touch time     [  m] Mark                [s r] Run server   [  ?] Show this help\n"
+                     "[SPC] Show Info  [  S] Sort        [T S] Toggle status  [  u] Unmark              [s s] Stop server  [  Q] Quit\n"
+                     "[  N] New        [  f] Filter tag  [t t] Toggle tags    [M a] Add tags to marked  [s d] Deploy\n"
+                     "[  R] Rename                                            [M r] Rmv tags to marked"))
           (help-str-without-brackets (replace-regexp-in-string "[][]" " " help-str 'fixedcase)))
      (mapc (lambda (begin-end)
              (add-face-text-property (car begin-end)
