@@ -387,10 +387,11 @@ KEY is a downcased symbol. <ex> 'status "
 (define-key hexo-mode-map (kbd "SPC") 'hexo/show-article-info)
 (define-key hexo-mode-map (kbd "N") 'hexo-new)
 (define-key hexo-mode-map (kbd "t") nil)
-(define-key hexo-mode-map (kbd "t s") 'hexo-toggle-article-status)
-(define-key hexo-mode-map (kbd "t T") 'hexo-touch-files-in-dir-by-time)
+(define-key hexo-mode-map (kbd "T s") 'hexo-toggle-article-status)
+(define-key hexo-mode-map (kbd "T T") 'hexo-touch-files-in-dir-by-time)
 (define-key hexo-mode-map (kbd "t t") 'hexo/edit-single-file-tags)
-(define-key hexo-mode-map (kbd "t a") 'hexo/add-tags)
+(define-key hexo-mode-map (kbd "t a") 'hexo/append-tags)
+(define-key hexo-mode-map (kbd "t s") 'hexo/substract-tags)
 (define-key hexo-mode-map (kbd "f") 'hexo/filter-tag)
 (define-key hexo-mode-map (kbd "R") 'hexo/rename-file)
 (define-key hexo-mode-map (kbd "<f2>") 'hexo/rename-file)
@@ -501,30 +502,57 @@ SUBEXP-DEPTH is 0 by default."
       (tabulated-list-revert)
       (message "Done!")))))
 
-(defun hexo-ask-for-tags-list (all-tags &optional selected-tags)
+(defun hexo-ask-for-tags-list (all-tags &optional selected-tags prompt)
   ;;[TODO] SELECTED-TAGS may rename to INIT-TAGS
   "Interactively ask user for a tags list SELECTED-TAGS"
   (interactive)
   (hexo-repo-only
    (let* ((tag (ido-completing-read
-                (format "Add / Remove Tags (C-j to apply or create tag) :
-                %s <= Current tags\n"
+                (format "%s (C-j to apply or create tag)\nCurrent tags ==> %s\n"
+                        (or prompt "Tags selector")
                         (hexo-format-tags-list selected-tags))
                 all-tags nil nil)))
      (cond ((string= "" tag)
             selected-tags)
            ((member tag selected-tags)
-            (hexo-ask-for-tags-list all-tags (remove tag selected-tags)))
-           (t                           ;create new tag
+            (hexo-ask-for-tags-list all-tags (remove tag selected-tags) prompt))
+           (t  ;create new tag
             (hexo-ask-for-tags-list (hexo-remove-duplicates-in-string-list (cons tag all-tags))
-                                    (cons tag selected-tags)))))))
+                                    (cons tag selected-tags)
+                                    prompt))))))
+
 
 (defun hexo-merge-string-list (list1 list2)
   "Return a sorted string list"
   (hexo-sort-string-list
    (hexo-remove-duplicates-in-string-list (append list1 list2))))
 
-(defun hexo/add-tags ()
+(defun hexo/append-tags ()
+  (interactive)
+  (hexo-mode-only
+   (let ((marked-files (hexo-get-marked-files-path)))
+     (if marked-files
+         ;; Multiple files
+         (let ((adding-tags (hexo-ask-for-tags-list (hexo-get-all-tags)
+                                                    nil
+                                                    (format "Append tags to %s articles" (length marked-files)))))
+           (mapc (lambda (file)
+                   (let ((merged-tags-for-this-file (hexo-merge-string-list adding-tags (hexo-get-article-tags-list file))))
+                     (hexo-overwrite-tags-to-file file merged-tags-for-this-file)))
+                 marked-files)
+           (tabulated-list-revert))
+       ;; Single file
+       (hexo-mode-article-only
+        (let* ((file-path (tabulated-list-get-id))
+               (adding-tags (hexo-ask-for-tags-list (hexo-get-all-tags)
+                                                    nil
+                                                    "Append tags to this article"))
+               (merged-tags-for-this-file (hexo-merge-string-list adding-tags (hexo-get-article-tags-list file-path))))
+          (hexo-overwrite-tags-to-file file-path merged-tags-for-this-file)
+          (tabulated-list-revert)))
+       ))))
+
+(defun hexo/substract-tags ()
   (interactive)
   (hexo-mode-only
    (let ((marked-files (hexo-get-marked-files-path)))
@@ -543,7 +571,8 @@ SUBEXP-DEPTH is 0 by default."
                (merged-tags-for-this-file (hexo-merge-string-list adding-tags (hexo-get-article-tags-list file-path))))
           (hexo-overwrite-tags-to-file file-path merged-tags-for-this-file)
           (tabulated-list-revert)))
-       ))))
+       )))
+  )
 
 (defun hexo-overwrite-tags-to-file (file-path tags-list)
   "TAGS-LIST is a string list"
