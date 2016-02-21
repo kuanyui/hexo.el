@@ -507,7 +507,8 @@ SUBEXP-DEPTH is 0 by default."
   (interactive)
   (hexo-repo-only
    (let* ((tag (ido-completing-read
-                (format "Add / Remove Tags (C-j to apply or create tag) :\n Current tags => %s\n"
+                (format "Add / Remove Tags (C-j to apply or create tag) :
+                %s <= Current tags\n"
                         (hexo-format-tags-list selected-tags))
                 all-tags nil nil)))
      (cond ((string= "" tag)
@@ -649,7 +650,9 @@ SUBEXP-DEPTH is 0 by default."
                  (forward-line))
                 (t
                  (forward-line))))
-        file-pathes))))
+        file-pathes
+        ;; [TODO] Maybe show a temp buffer *Marked Files* like `dired-mark-pop-up'?
+        ))))
 
 
 ;; ======================================================
