@@ -201,7 +201,7 @@ If not found, try to `executable-find' hexo in your system."
   ;; `hexo-generate-tabulated-list-format'), but `tabulated-list'
   ;; provide only a hook called *before* revert.
   (interactive)
-  (hexo-buffer-only
+  (hexo-mode-only
    (setq hexo-tabulated-list-entries-filter nil) ; remove entries filter <ex> tag filter
    (tabulated-list-revert)              ; native revert function
    (tabulated-list-init-header)))       ; adjust column sizes
@@ -409,7 +409,7 @@ KEY is a downcased symbol. <ex> 'status "
 
 (defun hexo/help ()
   (interactive)
-  (hexo-buffer-only
+  (hexo-mode-only
    (let* ((help-str (concat
                      (propertize
                       "File             View              Edit                 Server             Mode\n" 'face 'header-line)
@@ -439,7 +439,7 @@ SUBEXP-DEPTH is 0 by default."
         (setq pos m)))
     (nreverse result)))
 
-(defmacro hexo-buffer-only (&rest body)
+(defmacro hexo-mode-only (&rest body)
   `(if (eq major-mode 'hexo-mode)
        (progn ,@body)
      (message "Please run his command in `hexo-mode' buffer (M-x `hexo').")))
@@ -457,13 +457,13 @@ SUBEXP-DEPTH is 0 by default."
 
 (defun hexo/open-file ()
   (interactive)
-  (hexo-buffer-only
+  (hexo-mode-only
    (hexo-mode-article-only
     (find-file (tabulated-list-get-id)))))
 
 (defun hexo/rename-file (&optional init-value)
   (interactive)
-  (hexo-buffer-only
+  (hexo-mode-only
    (hexo-mode-article-only
     (let ((status (hexo-get-attribute-in-file-entry 'status (tabulated-list-get-entry))))
       (if (or (equal status "draft")
@@ -492,7 +492,7 @@ SUBEXP-DEPTH is 0 by default."
 
 (defun hexo/edit-single-file-tags ()
   (interactive)
-  (hexo-buffer-only
+  (hexo-mode-only
    (hexo-mode-article-only
     (let* ((file-path (tabulated-list-get-id))
            (old-tags-list (hexo-get-article-tags-list file-path))
@@ -525,7 +525,7 @@ SUBEXP-DEPTH is 0 by default."
 
 (defun hexo/add-tags ()
   (interactive)
-  (hexo-buffer-only
+  (hexo-mode-only
    (let ((marked-files (hexo-get-marked-files-path)))
      (if marked-files
          ;; Multiple files
@@ -582,7 +582,7 @@ SUBEXP-DEPTH is 0 by default."
 
 (defun hexo/show-article-info ()
   (interactive)
-  (hexo-buffer-only
+  (hexo-mode-only
    (hexo-mode-article-only
     (let ((formatted-file-entry (hexo-format-file-entry (tabulated-list-get-entry))))
       (message formatted-file-entry)))))
@@ -611,7 +611,7 @@ SUBEXP-DEPTH is 0 by default."
 
 (defun hexo/filter-tag ()
   (interactive)
-  (hexo-buffer-only
+  (hexo-mode-only
    (let ((tag (completing-read "Filter tag: "
                                (hexo-get-all-tags "~/source-kuanyui.github.io/") nil t)))
      (if (string= "" tag)
@@ -628,13 +628,13 @@ SUBEXP-DEPTH is 0 by default."
 
 (defun hexo/mark ()
   (interactive)
-  (hexo-buffer-only
+  (hexo-mode-only
    (hexo-mode-article-only
     (tabulated-list-put-tag (propertize " m" 'face 'hexo-mark) t))))
 
 (defun hexo/unmark ()
   (interactive)
-  (hexo-buffer-only
+  (hexo-mode-only
    (hexo-mode-article-only
     (tabulated-list-put-tag "  " t))))
 
