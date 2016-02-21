@@ -48,37 +48,44 @@ The following commands are only available in =markdown-mode=
 
 The following commands & key-bindings are available in =hexo-mode=.
 
-| Command                         | Key     | Description                                                                |
-|---------------------------------+---------+----------------------------------------------------------------------------|
-| File                            |         |                                                                            |
-|---------------------------------+---------+----------------------------------------------------------------------------|
-| =hexo/open-file=                  | =RET=     | Open file                                                                  |
-| =hexo/show-article-info=          | =SPC=     | Show article info                                                          |
-| =hexo-new=                        | =n=       | Create file                                                                |
-| =hexo/rename-file=                | =R=, =[f2]= | Rename file                                                                |
-|---------------------------------+---------+----------------------------------------------------------------------------|
-| View                            |         |                                                                            |
-|---------------------------------+---------+----------------------------------------------------------------------------|
-| =hexo/revert-tabulated-list=      | =g=       | Refresh                                                                    |
-| =tabulated-list-sort=             | =S=       | Sort according to this column header                                       |
-| =hexo/filter-tag=                 | =f=       | Filter by tag                                                              |
-|---------------------------------+---------+----------------------------------------------------------------------------|
-| Edit                            |         |                                                                            |
-|---------------------------------+---------+----------------------------------------------------------------------------|
-| =hexo-toggle-article-status=      | =t s=     | Move file between =_posts/= and =_drafts/=                                     |
-| =hexo-touch-files-in-dir-by-time= | =t t=     | Touch all files by their timestamp to make files sortable in file-manager. |
-| =hexo/tags-edit=                  | =t a=     | Add / Remove tags                                                          |
-|---------------------------------+---------+----------------------------------------------------------------------------|
-| Server                          |         |                                                                            |
-|---------------------------------+---------+----------------------------------------------------------------------------|
-| =hexo:run-server=                 | =s r=     | Open Hexo server process (posts only / posts + drafts)                     |
-| =hexo:stop-server=                | =s s=     | Stop Hexo server process                                                   |
-| =hexo:deploy=                     | =s d=     | Deploy                                                                     |
-|---------------------------------+---------+----------------------------------------------------------------------------|
-| Mode                            |         |                                                                            |
-|---------------------------------+---------+----------------------------------------------------------------------------|
-| =hexo/help=                       | =h=, =?=    | Show key-binding cheat sheet                                               |
-| =kill-buffer-and-window=          | =Q=       | Quit                                                                       |
+| Command                           | Key         | Description                                                                  |
+|-----------------------------------+-------------+------------------------------------------------------------------------------|
+| File                              |             |                                                                              |
+|-----------------------------------+-------------+------------------------------------------------------------------------------|
+| ~hexo/open-file~                  | ~RET~       | Open file                                                                    |
+| ~hexo/show-article-info~          | ~SPC~       | Show article info                                                            |
+| ~hexo-new~                        | ~n~         | Create file                                                                  |
+| ~hexo/rename-file~                | ~R~, ~[f2]~ | Rename file                                                                  |
+|-----------------------------------+-------------+------------------------------------------------------------------------------|
+| View                              |             |                                                                              |
+|-----------------------------------+-------------+------------------------------------------------------------------------------|
+| ~hexo/revert-tabulated-list~      | ~g~         | Refresh                                                                      |
+| ~tabulated-list-sort~             | ~S~         | Sort according to this column header                                         |
+| ~hexo/filter-tag~                 | ~f~         | Filter by tag                                                                |
+|-----------------------------------+-------------+------------------------------------------------------------------------------|
+| Edit                              |             |                                                                              |
+|-----------------------------------+-------------+------------------------------------------------------------------------------|
+| ~hexo-touch-files-in-dir-by-time~ | ~T T~       | ~touch~ all files by their timestamp to make files sortable in file-manager. |
+| ~hexo-toggle-article-status~      | ~T S~       | Toggle article status (Move file between ~_posts/~ and ~_drafts/~)           |
+| ~hexo/tags-toggler~               | ~t~         | Add / Remove tags *in a single article*                                      |
+|-----------------------------------+-------------+------------------------------------------------------------------------------|
+| Mark                              |             |                                                                              |
+|-----------------------------------+-------------+------------------------------------------------------------------------------|
+| ~hexo/mark~                       | ~m~         | Mark article                                                                 |
+| ~hexo/unmark~                     | ~u~         | Unmark article                                                               |
+| ~hexo/add-tags~                   | ~M a~       | Add tags to all marked articles                                              |
+| ~hexo/remove-tags~                | ~M r~       | Remove tags from all marked articles                                         |
+|-----------------------------------+-------------+------------------------------------------------------------------------------|
+| Server                            |             |                                                                              |
+|-----------------------------------+-------------+------------------------------------------------------------------------------|
+| ~hexo:run-server~                 | ~s r~       | Open Hexo server process (posts only / posts + drafts)                       |
+| ~hexo:stop-server~                | ~s s~       | Stop Hexo server process                                                     |
+| ~hexo:deploy~                     | ~s d~       | Deploy                                                                       |
+|-----------------------------------+-------------+------------------------------------------------------------------------------|
+| Mode                              |             |                                                                              |
+|-----------------------------------+-------------+------------------------------------------------------------------------------|
+| ~hexo/help~                       | ~h~, ~?~    | Show key-binding cheat sheet                                                 |
+| ~kill-buffer-and-window~          | ~Q~         | Quit                                                                         |
 
 
 * License
