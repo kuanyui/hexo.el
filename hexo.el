@@ -421,11 +421,11 @@ KEY is a downcased symbol. <ex> 'status "
   (hexo-mode-only
    (let* ((help-str (concat
                      (propertize
-                      "File             View              Edit                 Mark                      Server             Mode\n" 'face 'header-line)
-                     "[RET] Open       [  g] Refresh     [T T] Touch time     [  m] Mark                [s r] Run server   [  ?] Show this help\n"
-                     "[SPC] Show Info  [  S] Sort        [T S] Toggle status  [  u] Unmark              [s s] Stop server  [  Q] Quit\n"
-                     "[  N] New        [  f] Filter tag  [  t] Tags toggler   [M a] Add tags to marked  [s d] Deploy\n"
-                     "[  R] Rename                                            [M r] Rmv tags to marked"))
+                      "File             View              Edit                 Mark                Server             Mode\n" 'face 'header-line)
+                     "[RET] Open       [  g] Refresh     [T T] Touch time     [  m] Mark          [s r] Run server   [  ?] Show this help\n"
+                     "[SPC] Show Info  [  S] Sort        [T S] Toggle status  [  u] Unmark        [s s] Stop server  [  Q] Quit\n"
+                     "[  N] New        [  f] Filter tag  [  t] Tags toggler   [M a] Add tags      [s d] Deploy\n"
+                     "[  R] Rename                                            [M r] Remove tags"))
           (help-str-without-brackets (replace-regexp-in-string "[][]" " " help-str 'fixedcase)))
      (mapc (lambda (begin-end)
              (add-face-text-property (car begin-end)
