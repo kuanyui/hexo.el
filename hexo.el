@@ -232,6 +232,8 @@ If not found, try to `executable-find' hexo in your system."
   ;; `tabulated-list-revert' for dynamic columns sizes (see
   ;; `hexo-generate-tabulated-list-format'), but `tabulated-list'
   ;; provide only a hook called *before* revert.
+  "Refresh the articles list.
+Disable current filter (ex: tag) is exist."
   (interactive)
   (hexo-mode-only
    (setq hexo-tabulated-list-entries-filter nil) ; remove entries filter <ex> tag filter
@@ -390,7 +392,7 @@ KEY is a downcased symbol. <ex> 'status "
 
 ;;;###autoload
 (defun hexo ()
-  "Open Hexo-mode buffer"
+  "Open *Hexo*"
   (interactive)
   (require 'finder-inf nil t)
   (let* ((buf (get-buffer-create "*Hexo*"))
@@ -449,6 +451,7 @@ KEY is a downcased symbol. <ex> 'status "
 
 
 (defun hexo/help ()
+  "Show quick help message."
   (interactive)
   (hexo-mode-only
    (let* ((help-str (concat
@@ -497,12 +500,14 @@ SUBEXP-DEPTH is 0 by default."
        (message "Please run his command under a Hexo repo directory."))))
 
 (defun hexo/open-file ()
+  "Open file under the cursor"
   (interactive)
   (hexo-mode-only
    (hexo-mode-article-only
     (find-file (tabulated-list-get-id)))))
 
 (defun hexo/rename-file (&optional init-value)
+  "Rename (mv) the filename of the article under the cursor."
   (interactive)
   (hexo-mode-only
    (hexo-mode-article-only
@@ -532,6 +537,10 @@ SUBEXP-DEPTH is 0 by default."
     (cdr (assq 'tags info))))
 
 (defun hexo/tags-toggler ()
+  "Add / Remove tags of a single article.
+If you need to add / remove multiple tags on multiple articles,
+use (`hexo/mark' + `hexo/unmark')
+& (`hexo/add-tags' + `hexo/remove-tags') instead."
   (interactive)
   (hexo-mode-only
    (hexo-mode-article-only
@@ -545,7 +554,6 @@ SUBEXP-DEPTH is 0 by default."
 (defun hexo-ask-for-tags-list (all-tags &optional selected-tags prompt)
   ;;[TODO] SELECTED-TAGS may rename to INIT-TAGS
   "Interactively ask user for a tags list SELECTED-TAGS"
-  (interactive)
   (hexo-repo-only
    (let* ((tag (ido-completing-read
                 (format "%s (C-j to apply or create tag)\nCurrent tags ==> %s\n"
@@ -574,6 +582,9 @@ SUBEXP-DEPTH is 0 by default."
                  list)))
 
 (defun hexo/add-tags ()
+  "Add tags to all marked (`hexo/marked' & `hexo/unmark') articles.
+If you want to edit the tags list of a single article, use
+`hexo/tags-toggler' instead."
   (interactive)
   (hexo-mode-only
    (let ((marked-files (hexo-get-marked-files-path)))
@@ -589,10 +600,13 @@ SUBEXP-DEPTH is 0 by default."
            (tabulated-list-revert))
        ;; Single file
        (message "Please mark files first (press m).
-If you want to edit the tags of a single file, use hexo/tags-toggler (press t) instead.")
+       If you want to edit the tags of a single file, use hexo/tags-toggler (press t) instead.")
        ))))
 
 (defun hexo/remove-tags ()
+  "Remove tags from all marked (`hexo/marked' & `hexo/unmark') articles.
+If you want to edit the tags list of a single article, use
+`hexo/tags-toggler' instead."
   (interactive)
   (hexo-mode-only
    (let ((marked-files (hexo-get-marked-files-path)))
@@ -655,6 +669,8 @@ If you want to edit the tags of a single file, use hexo/tags-toggler (press t) i
           (mapconcat #'identity tags-list ", ")))
 
 (defun hexo/show-article-info ()
+  "Show article's info in minibuffer, so the columns won't be
+truncated by `tabulated-list'."
   (interactive)
   (hexo-mode-only
    (hexo-mode-article-only
@@ -684,6 +700,7 @@ If you want to edit the tags of a single file, use hexo/tags-toggler (press t) i
       ))))
 
 (defun hexo/filter-tag ()
+  "Filter articles by tag"
   (interactive)
   (hexo-mode-only
    (let ((tag (completing-read "Filter tag: "
@@ -701,12 +718,14 @@ If you want to edit the tags of a single file, use hexo/tags-toggler (press t) i
               (hexo-message "Press %s to disable filter" "g"))))))
 
 (defun hexo/mark ()
+  "Mark the article under cursor."
   (interactive)
   (hexo-mode-only
    (hexo-mode-article-only
     (tabulated-list-put-tag (propertize " m" 'face 'hexo-mark) t))))
 
 (defun hexo/unmark ()
+  "Unmark the article under cursor."
   (interactive)
   (hexo-mode-only
    (hexo-mode-article-only
@@ -948,7 +967,6 @@ Return absolute path of the article file."
 (defun hexo-substring-permalink-under-cursor ()
   "[Link](/2015/coscup-2015/) => /2015/coscup-2015/
 Return the link. If not found link under cursor, return nil."
-  (interactive)
   (save-excursion
     (let* ((original (point))
            (beg (search-backward "["))
@@ -995,6 +1013,7 @@ This is only resonable for files in _posts/."
                             command-string))
 
 (defun hexo:run-server ()
+  "Run a Hexo server process (posts only / posts + drafts)"
   (interactive)
   (hexo-repo-only
    (let ((type (ido-completing-read "[Hexo server] Type: " '("posts-only" "posts+drafts") nil t)))
@@ -1004,11 +1023,13 @@ This is only resonable for files in _posts/."
             (hexo-start-process-shell-command "hexo clean && hexo generate && hexo server --debug"))))))
 
 (defun hexo:deploy ()
+  "Deploy via hexo server."
   (interactive)
   (hexo-repo-only
    (hexo-start-process-shell-command "hexo clean && hexo generate && hexo deploy")))
 
 (defun hexo:stop-server ()
+  "Stop all Hexo server processes (posts only / posts + drafts)"
   (interactive)
   (if (process-live-p hexo-process)
       (progn (kill-process hexo-process)
