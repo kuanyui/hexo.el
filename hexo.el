@@ -955,7 +955,7 @@ This is only resonable for files in _posts/."
 
 (defun hexo-start-process-shell-command (command-string &optional repo-path)
   "COMMAND-STRING example:
-\"hexo clean;hexo generate;hexo server --debug\""
+\"hexo clean && hexo generate && hexo server --debug\""
   (if (process-live-p hexo-process)
       (progn (interrupt-process hexo-process)
              (kill-buffer hexo-process-buffer-name)))
@@ -977,14 +977,14 @@ This is only resonable for files in _posts/."
   (hexo-repo-only
    (let ((type (ido-completing-read "[Hexo server] Type: " '("posts-only" "posts+drafts") nil t)))
      (cond ((string= type "posts+drafts")
-            (hexo-start-process-shell-command "hexo clean;hexo generate;hexo server --debug --drafts"))
+            (hexo-start-process-shell-command "hexo clean && hexo generate && hexo server --debug --drafts"))
            ((string= type "posts-only")
-            (hexo-start-process-shell-command "hexo clean;hexo generate;hexo server --debug"))))))
+            (hexo-start-process-shell-command "hexo clean && hexo generate && hexo server --debug"))))))
 
 (defun hexo:deploy ()
   (interactive)
   (hexo-repo-only
-   (hexo-start-process-shell-command "hexo clean;hexo generate;hexo deploy")))
+   (hexo-start-process-shell-command "hexo clean && hexo generate && hexo deploy")))
 
 (defun hexo:stop-server ()
   (interactive)
