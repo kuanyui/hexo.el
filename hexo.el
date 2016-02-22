@@ -18,13 +18,12 @@
 ;;
 ;; To start, M-x hexo.  Press h to get help
 
-;; Code:
+;;; Code:
 
 (require 'cl-lib)
 (require 'tabulated-list)
 (require 'ido)
 
-;;; Code:
 
 (defgroup hexo nil
   "Manage Hexo with Emacs"
