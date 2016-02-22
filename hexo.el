@@ -996,3 +996,4 @@ This is only resonable for files in _posts/."
 
 
 (provide 'hexo)
+;;; hexo.el ends here
