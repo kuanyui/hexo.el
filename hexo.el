@@ -16,13 +16,15 @@
 
 ;; Use Hexo elegantly in Emacs.
 ;;
-;; To start, M-x hexo. Press h to get help
+;; To start, M-x hexo.  Press h to get help
 
 ;; Code:
 
 (require 'cl-lib)
 (require 'tabulated-list)
 (require 'ido)
+
+;;; Code:
 
 (defgroup hexo nil
   "Manage Hexo with Emacs"
@@ -42,7 +44,7 @@ See `hexo-setq-tabulated-list-entries'")
 (put 'hexo-tabulated-list-entries-filter 'permanent-local t)
 
 (defvar hexo-process nil
-  "Hexo process object")
+  "Hexo process object.")
 
 ;; ======================================================
 ;; Faces
@@ -154,16 +156,36 @@ If not found, try to `executable-find' hexo in your system."
         guessed-hexo
       (executable-find "hexo"))))
 
+(defun hexo-path (path)
+  "Return a formal formatted path string.
+ If path is a directory, suffix will be / added. Else, remove /."
+  (cond ((null path) nil)
+        ((file-directory-p path)
+         (if (not (string-suffix-p "/" path))
+             (file-truename (concat path "/"))
+           (file-truename path)))
+        (t
+         (if (string-suffix-p "/" path)
+             (substring path 0 (1- (length path)))
+           path))))
+
 (defun hexo-find-root-dir (&optional from-path)
   "Try to find the root dir of a Hexo repository."
-  (let ((PWD (or from-path default-directory)))
-    (cond ((equal (file-truename PWD) "/")
-           nil)
-          ((and (file-exists-p (concat PWD "/_config.yml"))
-                (file-exists-p (concat PWD "/node_modules/")))
-           (directory-file-name PWD))   ;remove final slash of PWD
-          (t
-           (hexo-find-root-dir (file-truename (concat PWD "../")))))))
+  (let* ((--from (or from-path default-directory))
+         (from (hexo-path --from))
+         (nodes (split-string from "/")))  ; '("~" "my-hexo-repo" "node_modules")
+    ;; Check if `from' contains any parent named `node_modules'.
+    ;; If contains, `cd ..` until no `node_modules' exists.
+    ;; <ex> ~/my-hexo-repo/node_modules/hexo-generator-category/node_modules/hexo-pagination/
+    ;;   => ~/my-hexo-repo/
+    (if (member "node_modules" nodes)
+        (let* ((nodes (split-string --p "/"))
+               (from-nth (length (member "node_modules" nodes)))
+               (nodes-without-node_modules (reverse (nthcdr from-nth (reverse nodes))))
+               (path-string (mapconcat #'identity nodes-without-node_modules "/")))
+          (hexo-path path-string))
+      (hexo-path (locate-dominating-file from "node_modules/")))))
+
 
 (defun hexo-ask-for-root-dir ()
   (let ((dir (hexo-find-root-dir (read-directory-name
@@ -252,12 +274,12 @@ Also see: `hexo-generate-tabulated-list-entries'"
 3. invalid files (e.g. a broken symbolic link)
 "
   (cl-remove-if (lambda (x) (or
-                      (not (file-exists-p x))
-                      (not (string-suffix-p ".md" x))
-                      (member (file-name-base x) '("." ".."))
-                      ;;(string-suffix-p "#" x) ;useless
-                      (string-suffix-p "~" x)))
-             (directory-files dir-path 'full)))
+                        (not (file-exists-p x))
+                        (not (string-suffix-p ".md" x))
+                        (member (file-name-base x) '("." ".."))
+                        ;;(string-suffix-p "#" x) ;useless
+                        (string-suffix-p "~" x)))
+                (directory-files dir-path 'full)))
 
 (defun hexo-generate-tabulated-list-entries (&optional repo-root-dir filter)
   "Each element in `tabulated-list-entries' is like:
