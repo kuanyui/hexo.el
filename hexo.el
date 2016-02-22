@@ -20,7 +20,7 @@
 
 ;; Code:
 
-(require 'cl)
+(require 'cl-lib)
 (require 'tabulated-list)
 (require 'ido)
 
@@ -128,9 +128,9 @@ object."
 (defun hexo-get-all-opened-files ()
   "Get all currently opened files in Emacs.
 Return ((FILE-PATH . BUFFER) ...)"
-  (remove-if (lambda (x) (null (car x)))
-             (mapcar (lambda (buf) (cons (buffer-file-name buf) buf))
-                     (buffer-list))))
+  (cl-remove-if (lambda (x) (null (car x)))
+                (mapcar (lambda (buf) (cons (buffer-file-name buf) buf))
+                        (buffer-list))))
 
 (defun hexo-get-file-head-lines (file-path &optional n)
   "Get the first N lines of a file as a list."
@@ -139,7 +139,7 @@ Return ((FILE-PATH . BUFFER) ...)"
     (let ((lines (split-string (buffer-string) "\n" t)))
       (if (null n)
           lines
-        (subseq lines 0 (1- n))))))
+        (cl-subseq lines 0 (1- n))))))
 
 (defun hexo-get-file-head-lines-as-string (file-path &optional n)
   "Get first N lines of a file as a string."
@@ -188,7 +188,7 @@ If not found, try to `executable-find' hexo in your system."
   (sort string-list #'string<))
 
 (defun hexo-remove-duplicates-in-string-list (string-list)
-  (remove-duplicates string-list :test #'string=))
+  (cl-remove-duplicates string-list :test #'string=))
 
 ;; ======================================================
 ;; Main
@@ -251,7 +251,7 @@ Also see: `hexo-generate-tabulated-list-entries'"
 2. special files (e.g. '..')
 3. invalid files (e.g. a broken symbolic link)
 "
-  (remove-if (lambda (x) (or
+  (cl-remove-if (lambda (x) (or
                       (not (file-exists-p x))
                       (not (string-suffix-p ".md" x))
                       (member (file-name-base x) '("." ".."))
@@ -267,7 +267,7 @@ FILTER is a function with one arg."
   (let ((entries (mapcar #'hexo-generate-file-entry-for-tabulated-list
                          (hexo-get-all-article-files repo-root-dir 'include-drafts))))
     (if filter
-        (remove-if-not filter entries)
+        (cl-remove-if-not filter entries)
       entries)))
 
 (defun hexo-get-all-article-files (&optional repo-root-dir include-drafts)
@@ -311,7 +311,7 @@ FILTER is a function with one arg."
   (tags . (tags ...))
   (categories . (categories ...)))"
   (let ((head-lines (hexo-get-file-head-lines file-path 6)))
-    (remove-if
+    (cl-remove-if
      #'null
      (mapcar (lambda (line)
                (cond ((string-match "^title: ?\\(.+\\)" line)
@@ -354,10 +354,10 @@ In `tabulated-list-mode', use `tabulated-list-get-id' and
 The struct of FILE-ENTRY is defined in `tabulated-list-format'.
 <ex> [(\"Status\" 6 nil) (\"Filename\" 48 nil) (\"Title\" 48 nil)]
 KEY is a downcased symbol. <ex> 'status "
-  (let ((index (position key tabulated-list-format
-                         :test (lambda (ele lst)
-                                 (equal (capitalize (symbol-name ele))
-                                        (car lst))))))
+  (let ((index (cl-position key tabulated-list-format
+                            :test (lambda (ele lst)
+                                    (equal (capitalize (symbol-name ele))
+                                           (car lst))))))
     (aref file-entry index)))
 
 (defun hexo-get-article-parent-dir-name (file-path)
@@ -548,8 +548,8 @@ SUBEXP-DEPTH is 0 by default."
 (defun hexo-substract-string-list (list subset-list)
   "Return ( LIST - SUBSET-LIST )"
   (hexo-sort-string-list
-   (remove-if (lambda (x) (member x subset-list))
-              list)))
+   (cl-remove-if (lambda (x) (member x subset-list))
+                 list)))
 
 (defun hexo/add-tags ()
   (interactive)
@@ -604,16 +604,16 @@ If you want to edit the tags of a single file, use hexo/tags-toggler (press t) i
 (defun hexo-get-all-tags (&optional root-dir)
   (hexo-sort-string-list
    (hexo-remove-duplicates-in-string-list
-    (mapcan (lambda (file-path)
-              (cdr (assq 'tags (hexo-get-article-info file-path))))
-            (hexo-get-all-article-files root-dir 'include-drafts)))))
+    (cl-mapcan (lambda (file-path)
+                 (cdr (assq 'tags (hexo-get-article-info file-path))))
+               (hexo-get-all-article-files root-dir 'include-drafts)))))
 
 (defun hexo-get-all-tags-in-files (&optional files-list)
   (hexo-sort-string-list
    (hexo-remove-duplicates-in-string-list
-    (mapcan (lambda (file-path)
-              (cdr (assq 'tags (hexo-get-article-info file-path))))
-            files-list))))
+    (cl-mapcan (lambda (file-path)
+                 (cdr (assq 'tags (hexo-get-article-info file-path))))
+               files-list))))
 
 (defun hexo--edit-tags-iter (this-file-tags-list all-tags)
   (let ((tag (ido-completing-read
@@ -642,7 +642,7 @@ If you want to edit the tags of a single file, use hexo/tags-toggler (press t) i
 (defun hexo-format-file-entry (file-entry)
   "FILE-ENTRY is a `vector'. See `hexo-get-attribute-in-file-entry'
  and `hexo-generate-file-entry-for-tabulated-list'"
-  (let* ((keys-string-list (map 'list #'car tabulated-list-format)) ; ("Status" "Filename"...)
+  (let* ((keys-string-list (cl-map 'list #'car tabulated-list-format)) ; ("Status" "Filename"...)
          (max-length (apply #'max (mapcar #'length keys-string-list))))
     (concat
      (propertize "  File Information\n" 'face 'header-line 'bold t)
