@@ -702,8 +702,8 @@ truncated by `tabulated-list'."
   "Filter articles by tag"
   (interactive)
   (hexo-mode-only
-   (let ((tag (completing-read "Filter tag: "
-                               (hexo-get-all-tags "~/source-kuanyui.github.io/") nil t)))
+   (let ((tag (ido-completing-read "Filter tag: "
+                                   (hexo-get-all-tags "~/source-kuanyui.github.io/") nil t)))
      (if (string= "" tag)
          (message "No tag inputed, abort.")
        ;; Assign variable `hexo-tabulated-list-entries-filter' as our filter function
