@@ -1,6 +1,6 @@
 ;;; hexo.el --- Major mode & tools for Hexo      -*- lexical-binding: t; -*-
 
-;; Author: Ono Hiroko <azazabc123@gmail.com>
+;; Author: Ono Hiroko (kuanyui) <azazabc123@gmail.com>
 ;; Keywords: tools, hexo
 ;; Package-Requires: ((emacs "24.3"))
 ;; X-URL: https://github.com/kuanyui/hexo.el
