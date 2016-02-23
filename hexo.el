@@ -19,7 +19,6 @@
 ;; To start, M-x hexo.  Press h to get help
 
 ;;; Code:
-
 (require 'cl-lib)
 (require 'tabulated-list)
 (require 'ido)
@@ -225,7 +224,7 @@ If not found, try to `executable-find' hexo in your system."
   (tabulated-list-init-header)
   )
 
-(defun hexo/revert-tabulated-list ()
+(defun hexo-command-revert-tabulated-list ()
   ;; Because `tabulated-list-init-header' must be called *after*
   ;; `tabulated-list-revert' for dynamic columns sizes (see
   ;; `hexo-generate-tabulated-list-format'), but `tabulated-list'
@@ -408,8 +407,9 @@ KEY is a downcased symbol. <ex> 'status "
     (if win
         (select-window win)
       (switch-to-buffer buf))
-    (hexo/revert-tabulated-list)
+    (hexo-command-revert-tabulated-list)
     (tabulated-list-print 'remember-pos)))
+
 
 ;; ======================================================
 ;; Commands for hexo-mode only
@@ -420,35 +420,35 @@ KEY is a downcased symbol. <ex> 'status "
 (define-key hexo-mode-map (kbd "s") nil)
 (define-key hexo-mode-map (kbd "M") nil)
 ;; Files
-(define-key hexo-mode-map (kbd "RET") 'hexo/open-file)
-(define-key hexo-mode-map (kbd "SPC") 'hexo/show-article-info)
+(define-key hexo-mode-map (kbd "RET") 'hexo-command-open-file)
+(define-key hexo-mode-map (kbd "SPC") 'hexo-command-show-article-info)
 (define-key hexo-mode-map (kbd "N") 'hexo-new)
-(define-key hexo-mode-map (kbd "R") 'hexo/rename-file)
-(define-key hexo-mode-map (kbd "<f2>") 'hexo/rename-file)
+(define-key hexo-mode-map (kbd "R") 'hexo-command-rename-file)
+(define-key hexo-mode-map (kbd "<f2>") 'hexo-command-rename-file)
 ;; View
-(define-key hexo-mode-map (kbd "g") 'hexo/revert-tabulated-list)
+(define-key hexo-mode-map (kbd "g") 'hexo-command-revert-tabulated-list)
 (define-key hexo-mode-map (kbd "S") 'tabulated-list-sort)
-(define-key hexo-mode-map (kbd "f") 'hexo/filter-tag)
+(define-key hexo-mode-map (kbd "f") 'hexo-command-filter-tag)
 ;; Edit
 (define-key hexo-mode-map (kbd "T T") 'hexo-touch-files-in-dir-by-time)
 (define-key hexo-mode-map (kbd "T S") 'hexo-toggle-article-status)
-(define-key hexo-mode-map (kbd "t") 'hexo/tags-toggler)
+(define-key hexo-mode-map (kbd "t") 'hexo-command-tags-toggler)
 ;; Marks
-(define-key hexo-mode-map (kbd "m") 'hexo/mark)
-(define-key hexo-mode-map (kbd "u") 'hexo/unmark)
-(define-key hexo-mode-map (kbd "M a") 'hexo/add-tags)
-(define-key hexo-mode-map (kbd "M r") 'hexo/remove-tags)
+(define-key hexo-mode-map (kbd "m") 'hexo-command-mark)
+(define-key hexo-mode-map (kbd "u") 'hexo-command-unmark)
+(define-key hexo-mode-map (kbd "M a") 'hexo-command-add-tags)
+(define-key hexo-mode-map (kbd "M r") 'hexo-command-remove-tags)
 ;; Server
-(define-key hexo-mode-map (kbd "s r") 'hexo:run-server)
-(define-key hexo-mode-map (kbd "s s") 'hexo:stop-server)
-(define-key hexo-mode-map (kbd "s d") 'hexo:deploy)
+(define-key hexo-mode-map (kbd "s r") 'hexo-server-run)
+(define-key hexo-mode-map (kbd "s s") 'hexo-server-stop)
+(define-key hexo-mode-map (kbd "s d") 'hexo-server-deploy)
 ;; Modes
-(define-key hexo-mode-map (kbd "h") 'hexo/help)
-(define-key hexo-mode-map (kbd "?") 'hexo/help)
+(define-key hexo-mode-map (kbd "h") 'hexo-command-help)
+(define-key hexo-mode-map (kbd "?") 'hexo-command-help)
 (define-key hexo-mode-map (kbd "Q") 'kill-buffer-and-window)
 
 
-(defun hexo/help ()
+(defun hexo-command-help ()
   "Show quick help message."
   (interactive)
   (hexo-mode-only
@@ -497,14 +497,14 @@ SUBEXP-DEPTH is 0 by default."
          (progn (cd dir) ,@body)
        (message "Please run his command under a Hexo repo directory."))))
 
-(defun hexo/open-file ()
+(defun hexo-command-open-file ()
   "Open file under the cursor"
   (interactive)
   (hexo-mode-only
    (hexo-mode-article-only
     (find-file (tabulated-list-get-id)))))
 
-(defun hexo/rename-file (&optional init-value)
+(defun hexo-command-rename-file (&optional init-value)
   "Rename (mv) the filename of the article under the cursor."
   (interactive)
   (hexo-mode-only
@@ -523,7 +523,7 @@ SUBEXP-DEPTH is 0 by default."
             (if (file-exists-p new-file-path)
                 (progn (hexo-message "Filename '%s' already existed. Please try another name." new-name-without-ext)
                        (sit-for 5)
-                       (hexo/rename-file new-name-without-ext))
+                       (hexo-command-rename-file new-name-without-ext))
               (progn (rename-file original-file-path new-file-path)
                      (revert-buffer)
                      (search-forward new-name-without-ext)
@@ -534,11 +534,11 @@ SUBEXP-DEPTH is 0 by default."
   (let ((info (hexo-get-article-info file-path)))
     (cdr (assq 'tags info))))
 
-(defun hexo/tags-toggler ()
+(defun hexo-command-tags-toggler ()
   "Add / Remove tags of a single article.
 If you need to add / remove multiple tags on multiple articles,
-use (`hexo/mark' + `hexo/unmark')
-& (`hexo/add-tags' + `hexo/remove-tags') instead."
+use (`hexo-command-mark' + `hexo-command-unmark')
+& (`hexo-command-add-tags' + `hexo-command-remove-tags') instead."
   (interactive)
   (hexo-mode-only
    (hexo-mode-article-only
@@ -579,10 +579,10 @@ use (`hexo/mark' + `hexo/unmark')
    (cl-remove-if (lambda (x) (member x subset-list))
                  list)))
 
-(defun hexo/add-tags ()
-  "Add tags to all marked (`hexo/marked' & `hexo/unmark') articles.
+(defun hexo-command-add-tags ()
+  "Add tags to all marked (`hexo/marked' & `hexo-command-unmark') articles.
 If you want to edit the tags list of a single article, use
-`hexo/tags-toggler' instead."
+`hexo-command-tags-toggler' instead."
   (interactive)
   (hexo-mode-only
    (let ((marked-files (hexo-get-marked-files-path)))
@@ -598,13 +598,13 @@ If you want to edit the tags list of a single article, use
            (tabulated-list-revert))
        ;; Single file
        (message "Please mark files first (press m).
-       If you want to edit the tags of a single file, use hexo/tags-toggler (press t) instead.")
+       If you want to edit the tags of a single file, use hexo-command-tags-toggler (press t) instead.")
        ))))
 
-(defun hexo/remove-tags ()
-  "Remove tags from all marked (`hexo/marked' & `hexo/unmark') articles.
+(defun hexo-command-remove-tags ()
+  "Remove tags from all marked (`hexo/marked' & `hexo-command-unmark') articles.
 If you want to edit the tags list of a single article, use
-`hexo/tags-toggler' instead."
+`hexo-command-tags-toggler' instead."
   (interactive)
   (hexo-mode-only
    (let ((marked-files (hexo-get-marked-files-path)))
@@ -620,7 +620,7 @@ If you want to edit the tags list of a single article, use
            (tabulated-list-revert))
        ;; Single file
        (message "Please mark files first (press m).
-If you want to edit the tags of a single file, use hexo/tags-toggler (press t) instead.")
+If you want to edit the tags of a single file, use hexo-command-tags-toggler (press t) instead.")
        ))))
 
 (defun hexo-overwrite-tags-to-file (file-path tags-list)
@@ -666,7 +666,7 @@ If you want to edit the tags of a single file, use hexo/tags-toggler (press t) i
   (format "[%s]"
           (mapconcat #'identity tags-list ", ")))
 
-(defun hexo/show-article-info ()
+(defun hexo-command-show-article-info ()
   "Show article's info in minibuffer, so the columns won't be
 truncated by `tabulated-list'."
   (interactive)
@@ -697,7 +697,7 @@ truncated by `tabulated-list'."
       "\n"
       ))))
 
-(defun hexo/filter-tag ()
+(defun hexo-command-filter-tag ()
   "Filter articles by tag"
   (interactive)
   (hexo-mode-only
@@ -715,14 +715,14 @@ truncated by `tabulated-list'."
               (tabulated-list-revert)
               (hexo-message "Press %s to disable filter" "g"))))))
 
-(defun hexo/mark ()
+(defun hexo-command-mark ()
   "Mark the article under cursor."
   (interactive)
   (hexo-mode-only
    (hexo-mode-article-only
     (tabulated-list-put-tag (propertize " m" 'face 'hexo-mark) t))))
 
-(defun hexo/unmark ()
+(defun hexo-command-unmark ()
   "Unmark the article under cursor."
   (interactive)
   (hexo-mode-only
@@ -1010,7 +1010,7 @@ This is only resonable for files in _posts/."
                             (hexo-find-command repo-path)
                             command-string))
 
-(defun hexo:run-server ()
+(defun hexo-server-run ()
   "Run a Hexo server process (posts only / posts + drafts)"
   (interactive)
   (hexo-repo-only
@@ -1020,13 +1020,13 @@ This is only resonable for files in _posts/."
            ((string= type "posts-only")
             (hexo-start-process-shell-command "hexo clean && hexo generate && hexo server --debug"))))))
 
-(defun hexo:deploy ()
+(defun hexo-server-deploy ()
   "Deploy via hexo server."
   (interactive)
   (hexo-repo-only
    (hexo-start-process-shell-command "hexo clean && hexo generate && hexo deploy")))
 
-(defun hexo:stop-server ()
+(defun hexo-server-stop ()
   "Stop all Hexo server processes (posts only / posts + drafts)"
   (interactive)
   (if (process-live-p hexo-process)
