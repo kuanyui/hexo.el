@@ -178,8 +178,7 @@ If not found, try to `executable-find' hexo in your system."
     ;; <ex> ~/my-hexo-repo/node_modules/hexo-generator-category/node_modules/hexo-pagination/
     ;;   => ~/my-hexo-repo/
     (if (member "node_modules" nodes)
-        (let* ((nodes (split-string --p "/"))
-               (from-nth (length (member "node_modules" nodes)))
+        (let* ((from-nth (length (member "node_modules" nodes)))
                (nodes-without-node_modules (reverse (nthcdr from-nth (reverse nodes))))
                (path-string (mapconcat #'identity nodes-without-node_modules "/")))
           (hexo-path path-string))
