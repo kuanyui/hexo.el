@@ -17,6 +17,14 @@ Emacs major-mode & tools for [[https://github.com/hexojs/hexo][Hexo]]. σ(´∀�
 (require 'hexo)
 #+END_SRC
 
+You can define your function to open a specified hexo repository directly like this:
+
+#+BEGIN_SRC elisp
+(defun hexo-my-blog ()
+    (interactive)
+    (hexo "~/my-blog/"))
+#+END_SRC
+
 * Usage
 =M-x hexo= to use =hexo-mode=.
 
