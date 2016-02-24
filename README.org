@@ -12,6 +12,8 @@ Emacs major-mode & tools for [[https://github.com/hexojs/hexo][Hexo]]. σ(´∀�
 
 * Install
 
+=hexo.el= is available on [[https://github.com/melpa/melpa][MELPA]] now.
+
 #+BEGIN_SRC elisp
 (add-to-list 'load-path "~/path/to/hexo.el/dir")
 (require 'hexo)
