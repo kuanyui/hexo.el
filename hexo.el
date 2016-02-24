@@ -388,13 +388,14 @@ KEY is a downcased symbol. <ex> 'status "
     (file-name-directory file-path))))
 
 ;;;###autoload
-(defun hexo ()
-  "Open *Hexo*"
+(defun hexo (&optional custom-repo-root-path)
+  "Start *Hexo*. "
   (interactive)
   (require 'finder-inf nil t)
   (let* ((buf (get-buffer-create "*Hexo*"))
          (win (get-buffer-window buf))
-         (--hexo-root (or hexo-root-dir ;if already under `hexo-mode', this var must be non-nil
+         (--hexo-root (or custom-repo-root-path
+                          hexo-root-dir ;if already under `hexo-mode', this var must be non-nil
                           (hexo-find-root-dir default-directory))))
     (if --hexo-root   ;When calling `hexo', under a hexo repo
         (with-current-buffer buf
