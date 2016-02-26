@@ -448,26 +448,28 @@ KEY is a downcased symbol. <ex> 'status "
 (define-key hexo-mode-map (kbd "?") 'hexo-command-help)
 (define-key hexo-mode-map (kbd "Q") 'kill-buffer-and-window)
 
+(defun hexo-get-help-string ()
+  (let* ((help-str (concat
+                    (propertize
+                     "File             View              Edit                 Mark                Server             Mode\n" 'face 'header-line)
+                    "[RET] Open       [  g] Refresh     [T T] Touch time     [  m] Mark          [s r] Run server   [  ?] Show this help\n"
+                    "[SPC] Show Info  [  S] Sort        [T S] Toggle status  [  u] Unmark        [s s] Stop server  [  Q] Quit\n"
+                    "[  N] New        [  f] Filter tag  [  t] Tags toggler   [M a] Add tags      [s d] Deploy\n"
+                    "[  R] Rename                                            [M r] Remove tags"))
+         (help-str-without-brackets (replace-regexp-in-string "[][]" " " help-str 'fixedcase)))
+    (mapc (lambda (begin-end)
+            (add-face-text-property (car begin-end)
+                                    (cdr begin-end)
+                                    '(face 'hexo-status-post)
+                                    t help-str-without-brackets))
+          (hexo-string-match-positions "\\(\\[.+?\\]\\)" help-str 1)) ;all position
+    help-str-without-brackets))
 
-(defun hexo-command-help ()
+(defun hexo-command-quick-help ()
   "Show quick help message."
   (interactive)
   (hexo-mode-only
-   (let* ((help-str (concat
-                     (propertize
-                      "File             View              Edit                 Mark                Server             Mode\n" 'face 'header-line)
-                     "[RET] Open       [  g] Refresh     [T T] Touch time     [  m] Mark          [s r] Run server   [  ?] Show this help\n"
-                     "[SPC] Show Info  [  S] Sort        [T S] Toggle status  [  u] Unmark        [s s] Stop server  [  Q] Quit\n"
-                     "[  N] New        [  f] Filter tag  [  t] Tags toggler   [M a] Add tags      [s d] Deploy\n"
-                     "[  R] Rename                                            [M r] Remove tags"))
-          (help-str-without-brackets (replace-regexp-in-string "[][]" " " help-str 'fixedcase)))
-     (mapc (lambda (begin-end)
-             (add-face-text-property (car begin-end)
-                                     (cdr begin-end)
-                                     '(face 'hexo-status-post)
-                                     t help-str-without-brackets))
-           (hexo-string-match-positions "\\(\\[.+?\\]\\)" help-str 1)) ;all position
-     (message help-str-without-brackets))))
+   (message (hexo-get-help-string))))
 
 (defun hexo-string-match-positions (regexp string &optional subexp-depth)
   "Get all matched REGEXP position in a STRING.
