@@ -1035,7 +1035,8 @@ This is only resonable for files in _posts/."
   "Stop all Hexo server processes (posts only / posts + drafts)"
   (interactive)
   (if (process-live-p hexo-process)
-      (progn (kill-process hexo-process)
+      (progn (interrupt-process hexo-process)
+             (sit-for 0.5)
              (kill-buffer hexo-process-buffer-name)
              (message "Server stopped ~!"))
     (message "No active server found")))
