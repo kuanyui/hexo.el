@@ -399,8 +399,8 @@ KEY is a downcased symbol. <ex> 'status "
                           (hexo-find-root-dir default-directory) ;Try to find from pwd
                           (hexo-ask-for-root-dir))))
     (with-current-buffer hexo-buffer
-      (cd (setq hexo-root-dir --hexo-root)))
-    (hexo-mode)
+      (cd (setq hexo-root-dir --hexo-root))
+      (hexo-mode))
     (if win
         (select-window win)
       (switch-to-buffer hexo-buffer))
