@@ -169,7 +169,7 @@ If not found, try to `executable-find' hexo in your system."
 
 (defun hexo-find-root-dir (&optional from-path)
   "Try to find the root dir of a Hexo repository."
-  (let* ((--from (or from-path default-directory))
+  (let* ((--from (or from-path hexo-root-dir default-directory))
          (from (hexo-path --from))
          (nodes (split-string from "/")))  ; '("~" "my-hexo-repo" "node_modules")
     ;; Check if `from' contains any parent named `node_modules'.
@@ -392,22 +392,18 @@ KEY is a downcased symbol. <ex> 'status "
   "Start *Hexo*. "
   (interactive)
   (require 'finder-inf nil t)
-  (let* ((buf (get-buffer-create "*Hexo*"))
-         (win (get-buffer-window buf))
+  (let* ((hexo-buffer (get-buffer-create "*Hexo*"))
+         (win (get-buffer-window hexo-buffer))
          (--hexo-root (or custom-repo-root-path
-                          hexo-root-dir ;if already under `hexo-mode', this var must be non-nil
-                          (hexo-find-root-dir default-directory))))
-    (if --hexo-root   ;When calling `hexo', under a hexo repo
-        (with-current-buffer buf
-          (setq hexo-root-dir --hexo-root)
-          (hexo-mode))
-      (with-current-buffer buf          ;not under a hexo repo
-        (setq hexo-root-dir (hexo-ask-for-root-dir))
-        (cd hexo-root-dir)
-        (hexo-mode)))
+                          hexo-root-dir ;if already under `hexo-mode', this var should be non-nil
+                          (hexo-find-root-dir default-directory) ;Try to find from pwd
+                          (hexo-ask-for-root-dir))))
+    (with-current-buffer hexo-buffer
+      (cd (setq hexo-root-dir --hexo-root)))
+    (hexo-mode)
     (if win
         (select-window win)
-      (switch-to-buffer buf))
+      (switch-to-buffer hexo-buffer))
     (hexo-command-revert-tabulated-list)
     (tabulated-list-print 'remember-pos)))
 
@@ -495,10 +491,9 @@ SUBEXP-DEPTH is 0 by default."
      (message "No article found at this position.")))
 
 (defmacro hexo-repo-only (&rest body)
-  `(let ((dir (or hexo-root-dir (hexo-find-root-dir))))
-     (if dir
-         (progn (cd dir) ,@body)
-       (message "Please run his command under a Hexo repo directory."))))
+  `(if (or hexo-root-dir (hexo-find-root-dir))
+       (progn ,@body)
+     (message "Please run his command under a Hexo repo directory.")))
 
 (defun hexo-command-open-file ()
   "Open file under the cursor"
@@ -761,10 +756,7 @@ That's to say, you can use this function to create new post, even though
 under theme/default/layout/"
   (interactive)
   (let ((hexo-command (hexo-find-command)))
-    (cond ((and (eq major-mode 'hexo-mode) hexo-root-dir) ; in hexo-mode
-           (cd hexo-root-dir)
-           (hexo--new-interactively hexo-command))
-          ((not (hexo-find-root-dir))                     ; not in a hexo repo
+    (cond ((not (hexo-find-root-dir))                     ; not in a hexo repo
            (message "You should run this command under a Hexo repo, or in a hexo-mode buffer"))
           ((null hexo-command)                            ; not found hexo command
            (message "Not found hexo command in your node_modules/ nor $PATH,"))
