@@ -440,8 +440,8 @@ KEY is a downcased symbol. <ex> 'status "
 (define-key hexo-mode-map (kbd "s s") 'hexo-server-stop)
 (define-key hexo-mode-map (kbd "s d") 'hexo-server-deploy)
 ;; Modes
-(define-key hexo-mode-map (kbd "h") 'hexo-command-help)
-(define-key hexo-mode-map (kbd "?") 'hexo-command-help)
+(define-key hexo-mode-map (kbd "h") 'hexo-command-quick-help)
+(define-key hexo-mode-map (kbd "?") 'hexo-command-quick-help)
 (define-key hexo-mode-map (kbd "Q") 'kill-buffer-and-window)
 
 (defun hexo-get-help-string ()
