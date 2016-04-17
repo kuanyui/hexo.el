@@ -931,11 +931,11 @@ Return absolute path of the article file."
            (title (car title+permalink))
            (permalink (cdr title+permalink))
            )
-      (insert (format "[%s](%s)"
-                      (if (y-or-n-p (format "Use original article title '%s' ? " title))
-                          title
-                        (read-from-minibuffer "Title: "))
-                      permalink)))))
+      (insert (ido-completing-read "Select one to insert: "
+                                   (list (format "[%s](%s)" title permalink)
+                                         (format "[](%s)" permalink))))
+      (backward-sexp 2)
+      (right-char 1))))
 
 ;;;###autoload
 (defun hexo-insert-file-link ()
