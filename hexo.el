@@ -923,8 +923,7 @@ Return absolute path of the article file."
   "Insert a link to other article in _posts/."
   (interactive)
   (if (or (not (eq major-mode 'markdown-mode))
-          (not (hexo-find-root-dir))
-          (not (member (hexo-get-article-parent-dir-name (buffer-file-name)) '("_posts" "_drafts"))))
+          (not (hexo-find-root-dir)))
       (message "This command only usable in a hexo article buffer (markdown).")
     (let* ((file-path (hexo-completing-read-post))
            (title+permalink (hexo-get-article-title-and-permalink file-path))
@@ -943,8 +942,7 @@ Return absolute path of the article file."
 exclude _posts/ & _drafts/"
   (interactive)
   (if (or (not (eq major-mode 'markdown-mode))
-          (not (hexo-find-root-dir))
-          (not (member (hexo-get-article-parent-dir-name (buffer-file-name)) '("_posts" "_drafts"))))
+          (not (hexo-find-root-dir)))
       (message "This command only usable in a hexo article buffer (markdown).")
     (let* ((source-dir-fullpath (concat (hexo-find-root-dir) "source/"))
            (file-fullpath (file-truename ;[FIXME] Fucking useless ido-read-file-name
