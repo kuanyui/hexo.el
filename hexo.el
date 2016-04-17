@@ -770,10 +770,10 @@ under theme/default/layout/"
                                    (match-string 1 stdout))))
     (find-file created-file-path)
     (goto-char 0)
-    (when (y-or-n-p "Rename arcitle title? ")
-      (replace-regexp "title: .+$" (format "title: \"%s\""
-                                           (read-from-minibuffer "Article Title: ")))
-      (save-buffer))))
+    (replace-regexp "title: .+$" (format "title: \"%s\""
+                                         (read-from-minibuffer "Article Title: "
+                                                               (car minibuffer-history))))
+    (save-buffer)))
 
 ;;;###autoload
 (defun hexo-touch-files-in-dir-by-time ()
