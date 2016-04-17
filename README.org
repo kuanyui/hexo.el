@@ -51,6 +51,7 @@ The following commands are only available in ~markdown-mode~
 | Command                            | Description                                                                        |
 |------------------------------------+------------------------------------------------------------------------------------|
 | ~hexo-insert-article-link~         | Insert a link to specific article in ~_posts/~.                                    |
+| ~hexo-insert-file-link~            | Insert a link to file. (not article)                                               |
 | ~hexo-update-current-article-date~ | Update article's date stamp by current time. *This may change its permanent link!* |
 | ~hexo-follow-post-link~            | Open the article file link under the cursor. <ex> ~[Hello](/2016/05/hello/)~       |
 

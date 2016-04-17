@@ -938,6 +938,30 @@ Return absolute path of the article file."
                       permalink)))))
 
 ;;;###autoload
+(defun hexo-insert-file-link ()
+  "Insert the link toward the files in source/ ,
+exclude _posts/ & _drafts/"
+  (interactive)
+  (if (or (not (eq major-mode 'markdown-mode))
+          (not (hexo-find-root-dir))
+          (not (member (hexo-get-article-parent-dir-name (buffer-file-name)) '("_posts" "_drafts"))))
+      (message "This command only usable in a hexo article buffer (markdown).")
+    (let* ((source-dir-fullpath (concat (hexo-find-root-dir) "source/"))
+           (file-fullpath (file-truename ;[FIXME] Fucking useless ido-read-file-name
+                           (ido-read-file-name "Input file path: "
+                                               source-dir-fullpath
+                                               nil
+                                               t
+                                               nil
+                                               (lambda (x) (not (or (string-match "_posts/" x)
+                                                               (string-match "_drafts/" x)))))))
+           (file-link (substring file-fullpath (1- (length source-dir-fullpath))))
+           (text (file-name-nondirectory file-fullpath)))
+      (insert (ido-completing-read "Select one to insert: "
+                                   (list (format "[%s](%s)" text file-link)
+                                         file-link))))))
+
+;;;###autoload
 (defun hexo-follow-post-link ()
   "`find-file' a markdown format link.
   [FIXME] Currently, this function only support a link with
