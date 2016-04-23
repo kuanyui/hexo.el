@@ -26,7 +26,7 @@
 
 (defgroup hexo nil
   "Manage Hexo with Emacs"
-  :prefix "hexo" :link '(url-link "http://github.com/kuanyui/hexo.el"))
+  :prefix "hexo-" :link '(url-link "http://github.com/kuanyui/hexo.el"))
 
 (defgroup hexo-faces nil
   "Faces used in `hexo-mode'"
@@ -104,7 +104,7 @@ See `hexo-setq-tabulated-list-entries'")
 
 (defun hexo-get-file-content-as-string (file-path)
   (with-temp-buffer
-    (insert-file file-path)
+    (insert-file-contents file-path)
     (buffer-string)))
 
 (defun hexo-overwrite-file-with-string (file-path string)
@@ -139,7 +139,7 @@ Return ((FILE-PATH . BUFFER) ...)"
     (let ((lines (split-string (buffer-string) "\n" t)))
       (if (null n)
           lines
-        (remove-if #'null (cl-subseq lines 0 (1- n)))))))
+        (cl-remove-if #'null (cl-subseq lines 0 (1- n)))))))
 
 (defun hexo-get-file-head-lines-as-string (file-path &optional n)
   "Get first N lines of a file as a string."
