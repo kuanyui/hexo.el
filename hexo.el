@@ -272,13 +272,16 @@ Also see: `hexo-generate-tabulated-list-entries'"
 2. special files (e.g. '..')
 3. invalid files (e.g. a broken symbolic link)
 "
-  (cl-remove-if (lambda (x) (or
-                        (not (file-exists-p x))
-                        (not (string-suffix-p ".md" x))
-                        (member (file-name-base x) '("." ".."))
-                        ;;(string-suffix-p "#" x) ;useless
-                        (string-suffix-p "~" x)))
-                (directory-files dir-path 'full)))
+  (if (file-exists-p dir-path)
+      (cl-remove-if (lambda (x) (or
+                            (not (file-exists-p x))
+                            (not (string-suffix-p ".md" x))
+                            (member (file-name-base x) '("." ".."))
+                            ;;(string-suffix-p "#" x) ;useless
+                            (string-suffix-p "~" x)))
+                    (directory-files dir-path 'full))
+    '()                                 ;if dir-path is not exist, return nil.
+    ))
 
 (defun hexo-generate-tabulated-list-entries (&optional repo-root-dir filter)
   "Each element in `tabulated-list-entries' is like:
