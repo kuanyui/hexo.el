@@ -349,6 +349,10 @@ FILTER is a function with one arg."
                      (t nil)))
              head-lines))))
 
+(defun hexo-cdr-assq (key article-info)
+  (let ((string (cdr (assq key article-info))))
+    (if (null string) "[None]" string)))
+
 (defun hexo-generate-file-entry-for-tabulated-list (file-path)
   "Generate the entry of FILE-PATH for `tabulated-list-mode'.
 <ex> (FileFullPath [\"post\" \"test.md\" \"Title\" \"2013/10/24\" \"category\" \"tag, tag2\"])
@@ -363,8 +367,8 @@ In `tabulated-list-mode', use `tabulated-list-get-id' and
                (propertize "post" 'face 'hexo-status-post)
              (propertize "draft" 'face 'hexo-status-draft))
            (file-name-base file-path)
-           (propertize (cdr (assq 'title info)) 'face 'hexo-title)
-           (propertize (cdr (assq 'date info)) 'face 'hexo-date)
+           (propertize (hexo-cdr-assq 'title info) 'face 'hexo-title)
+           (propertize (hexo-cdr-assq 'date info) 'face 'hexo-date)
            (mapconcat (lambda (x) (propertize x 'face 'hexo-category))
                       (cdr (assq 'categories info)) "/")
            (mapconcat (lambda (x) (propertize x 'face 'hexo-tag))
