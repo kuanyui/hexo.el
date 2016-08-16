@@ -22,7 +22,8 @@
 (require 'cl-lib)
 (require 'tabulated-list)
 (require 'ido)
-
+(require 'cl)
+(require 'subr-x)
 
 (defgroup hexo nil
   "Manage Hexo with Emacs"
