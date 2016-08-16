@@ -61,6 +61,12 @@ See `hexo-setq-tabulated-list-entries'")
   ""
   :group 'hexo-faces)
 
+(defface hexo-status-page
+  '((((class color) (background light)) (:bold t :foreground "#005f87" :background "#afd7ff"))
+    (((class color) (background dark)) (:bold t :foreground "#005f87" :background "#afd7ff")))
+  ""
+  :group 'hexo-faces)
+
 (defface hexo-tag
   '((((class color) (background light)) (:foreground "#005f87" :background "#afd7ff"))
     (((class color) (background dark)) (:foreground "#87dfff" :background "#3a3a3a":underline t)))
@@ -94,6 +100,26 @@ See `hexo-setq-tabulated-list-entries'")
 ;; ======================================================
 ;; Small tools
 ;; ======================================================
+
+(defun hexo-path-join (&rest paths)
+  "Like os.path.join() in Python 3"
+  (let* ((-paths (remove-if (lambda (x) (or (null x)
+                                       (equal "" x)))
+                            paths))
+         (raw-head (car -paths))
+         (raw-tail (cdr -paths))
+         (head (if (string-suffix-p "/" raw-head)
+                   (substring raw-head 0 -1)
+                 raw-head))
+         (tail (mapcar (lambda (x)
+                         (cond ((and (string-prefix-p "/" x) (string-suffix-p "/" x))
+                                (substring x 1 -1))
+                               ((string-prefix-p "/" x) (substring x 1))
+                               ((string-suffix-p "/" x) (substring x 0 -1))
+                               (t x)))
+                       raw-tail)))
+    (string-join (cons head tail) "/")))
+
 
 (defun hexo-message (format-string &rest args)
   "The same as `message', but it `propertize' all ARGS with
@@ -150,7 +176,7 @@ Return ((FILE-PATH . BUFFER) ...)"
   "Try to find hexo in node_modules/ directory.
 If not found, try to `executable-find' hexo in your system."
   (let* ((root-dir (hexo-find-root-dir from-path))
-         (guessed-hexo (format "%s/node_modules/hexo/bin/hexo" root-dir)))
+         (guessed-hexo (hexo-path-join root-dir "/node_modules/hexo/bin/hexo")))
     (if (and root-dir (file-exists-p guessed-hexo))
         guessed-hexo
       (executable-find "hexo"))))
@@ -169,7 +195,8 @@ If not found, try to `executable-find' hexo in your system."
            path))))
 
 (defun hexo-find-root-dir (&optional from-path)
-  "Try to find the root dir of a Hexo repository."
+  "Try to find the root dir of a Hexo repository.
+Output contains suffix '/' "
   (let* ((--from (or from-path hexo-root-dir default-directory))
          (from (hexo-path --from))
          (nodes (split-string from "/")))  ; '("~" "my-hexo-repo" "node_modules")
@@ -300,8 +327,9 @@ FILTER is a function with one arg."
   (let* ((root (or (hexo-find-root-dir repo-root-dir)
                    hexo-root-dir
                    (hexo-find-root-dir)))
-         (posts-dir (format "%s/source/_posts/" root))
-         (drafts-dir (format "%s/source/_drafts/" root)))
+         (source-dir (hexo-path-join root "/source/"))
+         (posts-dir (hexo-path-join source-dir "/_posts/"))
+         (drafts-dir (hexo-path-join source-dir "/_drafts/")))
     (append (hexo-directory-files posts-dir)
             (if include-drafts (hexo-directory-files drafts-dir) '()))
     ))
@@ -843,8 +871,8 @@ You can run this function in dired or a hexo article."
 If success, return the new file path, else nil."
   (let* ((from (hexo-get-article-parent-dir-name file-path))
          (to (if (string= from "_posts") "_drafts" "_posts"))
-         (to-path (format "%s/source/%s/%s"
-                          (hexo-find-root-dir file-path) to (file-name-nondirectory file-path))))
+         (to-path (hexo-path-join (hexo-find-root-dir file-path)
+                                  "/source/" to (file-name-nondirectory file-path))))
     (if (file-exists-p to-path)
         (prog1 nil
           (message (format "A file with the same name has existed in %s, please rename and try again." to)))
