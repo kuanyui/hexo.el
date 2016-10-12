@@ -207,7 +207,7 @@ Output contains suffix '/' "
     (if (member "node_modules" nodes)
         (let* ((from-nth (length (member "node_modules" nodes)))
                (nodes-without-node_modules (reverse (nthcdr from-nth (reverse nodes))))
-               (path-string (mapconcat #'identity nodes-without-node_modules "/")))
+               (path-string (string-join nodes-without-node_modules "/")))
           (hexo-path path-string))
       (hexo-path (locate-dominating-file from "node_modules/")))))
 
@@ -295,7 +295,7 @@ Also see: `hexo-generate-tabulated-list-entries'"
 
 (defun hexo-directory-files (dir-path)
   "The same as `directory-files', but remove:
-0. all not .md files
+0. files which are not Markdown / Org-mode
 1. temporary files
 2. special files (e.g. '..')
 3. invalid files (e.g. a broken symbolic link)
@@ -303,7 +303,8 @@ Also see: `hexo-generate-tabulated-list-entries'"
   (if (file-exists-p dir-path)
       (cl-remove-if (lambda (x) (or
                             (not (file-exists-p x))
-                            (not (string-suffix-p ".md" x))
+                            (not (or (string-suffix-p ".md" x)
+                                     (string-suffix-p ".org" x)))
                             (member (file-name-base x) '("." ".."))
                             ;;(string-suffix-p "#" x) ;useless
                             (string-suffix-p "~" x)))
@@ -346,16 +347,31 @@ FILTER is a function with one arg."
 (defun hexo-trim (string)
   (hexo-trim-quotes (hexo-trim-spaces string)))
 
-(defun hexo-parse-tags (string)
+(defun hexo-parse-tags (line)
   "Return a list containing tags"
-  (cond ((string-match "\\[\\(.+\\)\\]" string)
-         (let* ((raw (match-string 1 string)) ; "this", "is", "tag"
-                (raw (replace-regexp-in-string ", " "," raw 'fixedcase)))
-           (remove "" (mapcar #'hexo-trim-quotes (split-string raw ",")))))
-        ((string-match "^ *$" string)
-         '())
-        (t
-         (list (hexo-trim string)))))
+  (if (string-prefix-p "#+" line)
+      ;; Org-mode
+      (let* ((raw (progn (string-match "#\\+[a-z_]+: *\\(.+\\)" line)
+                         (match-string 1 line)))
+             (condensed (replace-regexp-in-string ", +" "," raw 'fixedcase)))
+        (remove "" (mapcar
+                    (lambda (x) (replace-regexp-in-string "&nbsp;" " " x))
+                    (split-string condensed ","))))
+    ;; Markdown
+    (cond ((string-match "\\[\\(.+\\)\\]" line)  ; Multiple tags
+           (let* ((raw (match-string 1 line))    ; "this", "is", "tag"
+                  (condensed (replace-regexp-in-string ", +" "," raw 'fixedcase)))
+             (remove "" (mapcar #'hexo-trim-quotes (split-string condensed ",")))))
+          ((string-match "^ *$" line)
+           '())
+          (t
+           (list (hexo-trim line))))))
+
+;; (hexo-parse-tags "#+TAGS: emacs,   linux, aaa&nbsp;ttt")
+;; (hexo-parse-tags "tags: [emacs,   linux, aaa ttt]")
+
+(defun hexo-parse-datetime (line)
+  )
 
 (defun hexo-get-article-info (file-path)
   "Return a list:
@@ -366,17 +382,31 @@ FILTER is a function with one arg."
   (let ((head-lines (hexo-get-file-head-lines file-path 6)))
     (cl-remove-if
      #'null
-     (mapcar (lambda (line)
-               (cond ((string-match "^title: ?\\(.+\\)" line)
-                      (cons 'title (hexo-trim (match-string 1 line))))
-                     ((string-match "^date: ?\\([0-9].+\\) " line) ;hide time
-                      (cons 'date (match-string 1 line)))
-                     ((string-match "^tags: ?\\(.+\\)" line)
-                      (cons 'tags (hexo-parse-tags (match-string 1 line))))
-                     ((string-match "^categories: ?\\(.+\\)" line)
-                      (cons 'categories (hexo-parse-tags (match-string 1 line))))
-                     (t nil)))
-             head-lines))))
+     (cond ((string-suffix-p ".md" file-path)
+            (mapcar (lambda (line)
+                      (cond ((string-match "^title: ?\\(.+\\)" line)
+                             (cons 'title      (hexo-trim (match-string 1 line))))
+                            ((string-match "^date:" line)
+                             (cons 'date       (hexo-parse-datetime line)))
+                            ((string-match "^tags:" line)
+                             (cons 'tags       (hexo-parse-tags line)))
+                            ((string-match "^categories:" line)
+                             (cons 'categories (hexo-parse-tags line)))
+                            (t nil)))
+                    head-lines))
+           ((string-suffix-p ".org" file-path)
+            (mapcar (lambda (line)
+                      (cond ((string-match "^#\\+title: ?\\(.+\\)" line)
+                             (cons 'title      (hexo-trim (match-string 1 line))))
+                            ((string-match "^#\\+date:" line)
+                             (cons 'date       (hexo-parse-datetime line)))
+                            ((string-match "^#\\+tags:" line)
+                             (cons 'tags       (hexo-parse-tags line)))
+                            ((string-match "^#\\+categories:" line)
+                             (cons 'categories (hexo-parse-tags line)))
+                            (t nil)))
+                    head-lines))
+           (t nil)))))
 
 (defun hexo-cdr-assq (key article-info)
   (let ((string (cdr (assq key article-info))))
