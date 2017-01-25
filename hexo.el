@@ -303,7 +303,8 @@ Also see: `hexo-generate-tabulated-list-entries'"
   (if (file-exists-p dir-path)
       (cl-remove-if (lambda (x) (or
                             (not (file-exists-p x))
-                            (not (string-suffix-p ".md" x))
+                            (and (not (string-suffix-p ".md" x))
+                                 (not (string-suffix-p ".org" x)))
                             (member (file-name-base x) '("." ".."))
                             ;;(string-suffix-p "#" x) ;useless
                             (string-suffix-p "~" x)))
