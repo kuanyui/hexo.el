@@ -349,7 +349,7 @@ FILTER is a function with one arg."
 
 (defun hexo-parse-tags (string)
   "Return a list containing tags"
-  (cond ((string-match "\\[\\(.+\\)\\]" string)
+  (cond ((or (string-match "\\[\\(.*\\)\\]" string) (string-match "\\(.*,.*\\)" string))
          (let* ((raw (match-string 1 string)) ; "this", "is", "tag"
                 (raw (replace-regexp-in-string ", " "," raw 'fixedcase)))
            (remove "" (mapcar #'hexo-trim-quotes (split-string raw ",")))))
@@ -368,13 +368,13 @@ FILTER is a function with one arg."
     (cl-remove-if
      #'null
      (mapcar (lambda (line)
-               (cond ((string-match "^title: ?\\(.+\\)" line)
+               (cond ((string-match "title: ?\\(.+\\)" line)
                       (cons 'title (hexo-trim (match-string 1 line))))
-                     ((string-match "^date: ?\\([0-9].+\\) " line) ;hide time
+                     ((string-match "date: ?\\([0-9-/.]+\\)" line) ;hide time
                       (cons 'date (match-string 1 line)))
-                     ((string-match "^tags: ?\\(.+\\)" line)
+                     ((string-match "tags: ?\\(.+\\)" line)
                       (cons 'tags (hexo-parse-tags (match-string 1 line))))
-                     ((string-match "^categories: ?\\(.+\\)" line)
+                     ((string-match "categories: ?\\(.+\\)" line)
                       (cons 'categories (hexo-parse-tags (match-string 1 line))))
                      (t nil)))
              head-lines))))
@@ -551,10 +551,11 @@ SUBEXP-DEPTH is 0 by default."
           (let* ((original-file-path (tabulated-list-get-id))
                  (pwd (file-name-directory original-file-path))
                  (original-name-without-ext (or init-value (file-name-base original-file-path)))
+                 (original-file-ext (file-name-extension original-file-path t))
                  (new-name-without-ext (read-from-minibuffer
                                         (format "Rename '%s' to: " original-name-without-ext)
                                         original-name-without-ext))
-                 (new-file-path (format "%s/%s.md" pwd new-name-without-ext)))
+                 (new-file-path (format "%s/%s%s" pwd new-name-without-ext original-file-ext)))
             (if (file-exists-p new-file-path)
                 (progn (hexo-message "Filename '%s' already existed. Please try another name." new-name-without-ext)
                        (sit-for 5)
@@ -665,8 +666,11 @@ If you want to edit the tags of a single file, use hexo-command-tags-toggler (pr
          (new-file-content (with-temp-buffer
                              (insert old-file-content)
                              (goto-char (point-min))
-                             (re-search-forward "tags:.*" nil t)
-                             (replace-match (format "tags: %s" formatted-tags-list))
+                             (re-search-forward "\\(.*tags:\\)\\(.*\\)" nil t)
+                             (message (match-string-no-properties 0))
+                             (if (string-match-p "#\\+.*" (match-string-no-properties 1))
+                                 (replace-match (format "#+TAGS: %s" formatted-tags-list) t)
+                               (replace-match (format "tags: [%s]" formatted-tags-list) t))
                              (buffer-string))))
     (hexo-overwrite-file-with-string file-path new-file-content)))
 
@@ -698,7 +702,7 @@ If you want to edit the tags of a single file, use hexo-command-tags-toggler (pr
             (hexo-sort-string-list (hexo-remove-duplicates-in-string-list (cons tag all-tags))))))))
 
 (defun hexo-format-tags-list (tags-list)
-  (format "[%s]"
+  (format "%s"
           (mapconcat #'identity tags-list ", ")))
 
 (defun hexo-command-show-article-info ()
@@ -802,15 +806,38 @@ under theme/default/layout/"
 (defun hexo--new-interactively (hexo-command)
   (let* ((stdout (shell-command-to-string (format "%s new '%s'"
                                                   hexo-command
-                                                  (read-from-minibuffer "Article URI: "))))
+                                                  (read-from-minibuffer "Article URI(xxx or xxx.org): "))))
          (created-file-path (progn (string-match "Created: \\(.+\\)$" stdout)
                                    (match-string 1 stdout))))
-    (find-file created-file-path)
-    (goto-char 0)
-    (replace-regexp "title: .+$" (format "title: \"%s\""
-                                         (read-from-minibuffer "Article Title: "
-                                                               (car minibuffer-history))))
-    (save-buffer)))
+    (if (string-match ".*-org\\.md" created-file-path)
+        (let ((new-file-path (replace-regexp-in-string ".*\\(-org\\.md\\)" "\.org" created-file-path nil nil 1))
+              )
+          (rename-file created-file-path new-file-path)
+          (find-file new-file-path)
+          (goto-char 0)
+          (replace-regexp "title: .+$" (format "#+TITLE: %s"
+                                               (read-from-minibuffer "Article Title: "
+                                                                     (substring  (car minibuffer-history) 0 -4))))
+          (goto-char 0)
+          (replace-regexp "date:\\(.*$\\)" "#+DATE:\\1" )
+          (goto-char 0)
+          (replace-regexp "tags:\\(.*$\\)" "#+TAGS:\\1" )
+          (goto-char 0)
+          (flush-lines "---")
+          (goto-char 0)
+          ;; (flush-lines "---")
+          )
+      (progn
+        (find-file created-file-path)
+        (goto-char 0)
+        (replace-regexp "title: .+$" (format "title: \"%s\""
+                                             (read-from-minibuffer "Article Title: "
+                                                                   (car minibuffer-history))))
+
+        )
+      )
+    (save-buffer)
+    ))
 
 ;;;###autoload
 (defun hexo-touch-files-in-dir-by-time ()
