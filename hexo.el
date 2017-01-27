@@ -824,7 +824,8 @@ under theme/default/layout/"
           (replace-regexp "tags:\\(.*$\\)" "#+TAGS:\\1" )
           (goto-char 0)
           (flush-lines "---")
-          (goto-char 0)
+          (goto-char (point-max))
+          (insert "#+LAYOUT: \n#+CATEGORIES: \n")
           ;; (flush-lines "---")
           )
       (progn
@@ -875,7 +876,8 @@ You can run this function in dired or a hexo article."
                (progn (tabulated-list-revert)
                       (search-forward file-name nil t))
              (message "Two filenames duplicated in _posts/ and _drafts/. Abort."))))
-        ((and (eq major-mode 'markdown-mode)
+        ((and (or  (eq major-mode 'markdown-mode)
+                   (eq major-mode 'org-mode))
               (hexo-find-root-dir))
          (let ((new-path (hexo--toggle-article-status (buffer-file-name))))
            (if new-path
@@ -885,7 +887,8 @@ You can run this function in dired or a hexo article."
              (message "Two filenames duplicated in _posts/ and _drafts/. Abort."))))
         ((and (eq major-mode 'dired-mode)
               (hexo-find-root-dir)
-              (string-suffix-p ".md" (dired-get-file-for-visit))
+              (or  (string-suffix-p ".md" (dired-get-file-for-visit))
+                   (string-suffix-p ".org" (dired-get-file-for-visit)))
               (member (hexo-get-article-parent-dir-name (dired-get-file-for-visit)) '("_posts" "_drafts")))
          (hexo--toggle-article-status (dired-get-file-for-visit)))
         (t
