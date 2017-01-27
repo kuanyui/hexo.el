@@ -923,15 +923,15 @@ If success, return the new file path, else nil."
 Please run this function in the article."
   (interactive)
   (cond
-   ((not (eq major-mode 'markdown-mode))
-    (message "Please run this function in a markdown file. Action cancelled."))
+   ((not (or  (eq major-mode 'markdown-mode) (eq major-mode 'org-mode)))
+    (message "Please run this function in a markdown file or org mode file. Action cancelled."))
    ((yes-or-no-p "This operation may *change the permanent link* of this article, continue? ")
     (save-excursion
       (goto-char (point-min))
       (save-match-data
-        (if (re-search-forward "^date: [0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\} [0-9]\\{2\\}:[0-9]\\{2\\}:[0-9]\\{2\\}" nil :no-error)
-            (let ((current-time (format-time-string "date: %Y-%m-%d %H:%M:%S")))
-              (replace-match current-time)
+        (if (re-search-forward "date: \\([0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\} [0-9]\\{2\\}:[0-9]\\{2\\}:[0-9]\\{2\\}\\)" nil :no-error)
+            (let ((current-time (format-time-string " %Y-%m-%d %H:%M:%S")))
+              (replace-match current-time nil nil nil 1)
               (save-buffer)
               (message (concat "Date updated: " current-time)))
           (message "Didn't find any time stamp in this article, abort.")))))
