@@ -929,7 +929,7 @@ Please run this function in the article."
     (save-excursion
       (goto-char (point-min))
       (save-match-data
-        (if (re-search-forward "date: \\([0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\} [0-9]\\{2\\}:[0-9]\\{2\\}:[0-9]\\{2\\}\\)" nil :no-error)
+        (if (re-search-forward "date: \\([0-9]\\{4\\}-[0-9]\\{2\\}-[0-9]\\{2\\}\\)\\([0-9]\\{2\\}:[0-9]\\{2\\}:[0-9]\\{2\\}\\)?" nil :no-error)
             (let ((current-time (format-time-string " %Y-%m-%d %H:%M:%S")))
               (replace-match current-time nil nil nil 1)
               (save-buffer)
@@ -973,14 +973,18 @@ Please run this function in the article."
 (defun hexo-completing-read-post (&optional repo-root-dir)
   "Use `ido-completing-read' to read filename in _posts/.
 Return absolute path of the article file."
-  (format "%s/source/_posts/%s.md"
-          (hexo-find-root-dir repo-root-dir)
-          (ido-completing-read
-           "Select Article: "
-           (mapcar #'file-name-base (hexo-get-all-article-files repo-root-dir nil)) ;not include drafts
-           nil t)))
+  (let ((article (format "%s/source/_posts/%s.md"
+                         (hexo-find-root-dir repo-root-dir)
+                         (ido-completing-read
+                          "Select Article: "
+                          (mapcar #'file-name-base (hexo-get-all-article-files repo-root-dir nil)) ;not include drafts
+                          nil t))))
+    (if (file-exists-p article)
+        article
+      (replace-regexp-in-string "md$"  "org" article))
+    ))
 
-(defun hexo-get-article-title (file-path)
+(defun  hexo-get-article-title (file-path)
   (let ((head (hexo-get-file-head-lines-as-string file-path 3)))
     (string-match "title:\\(.+\\)" head)
     (hexo-trim (match-string 1 head))))
@@ -989,19 +993,29 @@ Return absolute path of the article file."
 (defun hexo-insert-article-link ()
   "Insert a link to other article in _posts/."
   (interactive)
-  (if (or (not (eq major-mode 'markdown-mode))
+  (if (or (not (or (eq major-mode 'markdown-mode) (eq major-mode 'org-mode)))
           (not (hexo-find-root-dir)))
-      (message "This command only usable in a hexo article buffer (markdown).")
+      (message "This command only usable in a hexo article buffer (markdown or org).")
     (let* ((file-path (hexo-completing-read-post))
            (title+permalink (hexo-get-article-title-and-permalink file-path))
            (title (car title+permalink))
            (permalink (cdr title+permalink))
+           (link-format (if (eq major-mode 'markdown-mode)
+                            (list (format "[%s](%s)" title permalink)
+                                  (format "[](%s)" permalink))
+                          (list (format "[[%s][%s]]" permalink title)
+                                (format "[[%s]]" permalink))))
+           (pos (point))
            )
       (insert (ido-completing-read "Select one to insert: "
-                                   (list (format "[%s](%s)" title permalink)
-                                         (format "[](%s)" permalink))))
-      (backward-sexp 2)
-      (right-char 1))))
+                                   link-format))
+      (if (eq major-mode 'markdown-mode)
+          (progn
+            (backward-sexp 2)
+            (right-char 1)
+            )
+          )
+      )))
 
 ;;;###autoload
 (defun hexo-insert-file-link ()
@@ -1050,24 +1064,41 @@ exclude _posts/ & _drafts/"
   "[Link](/2015/coscup-2015/) => /2015/coscup-2015/
 Return the link. If not found link under cursor, return nil."
   (save-excursion
-    (let* ((original (point))
-           (beg (search-backward "["))
-           (end (search-forward ")"))
-           (str (buffer-substring beg end))
-           (url (progn (string-match "\\[.+?\\](\\(.+?\\))" str)
-                       (match-string 1 str))))
-      (if (and (>= original beg) (<= original end))
-          url
-        nil))))
+    (if (eq major-mode 'markdown-mode)
+        (let* ((original (point))
+               (beg (search-backward "["))
+               (end (search-forward ")"))
+               (str (buffer-substring beg end))
+               (url (progn (string-match "\\[.+?\\](\\(.+?\\))" str)
+                           (match-string 1 str))))
+          (if (and (>= original beg) (<= original end))
+              url
+            nil))
+      (let* ((original (point))
+             (beg (search-backward "[["))
+             (end (search-forward "]]"))
+             (str (buffer-substring beg end))
+             (url (progn (string-match "\\[\\[\\(.+?\\)\\].*" str)
+                         (match-string 1 str))))
+          (if (and (>= original beg) (<= original end))
+              url
+            nil)))
+
+    ))
 
 (defun hexo-get-file-path-from-post-permalink (permalink &optional repo-root-dir)
   "/2015/coscup-2015/ <= this is permalink
 This is only resonable for files in _posts/."
-  (let ((filename-without-ext (progn (string-match "/?\\([^/]+\\)/?$" permalink)
-                                     (match-string 1 permalink))))
-    (format "%s/source/_posts/%s.md"
-            (hexo-find-root-dir repo-root-dir)
-            filename-without-ext)))
+  (let* ((filename-without-ext (progn (string-match "/?\\([^/]+\\)/?$" permalink)
+                                      (match-string 1 permalink)))
+         (article (format "%s/source/_posts/%s.md"
+                          (hexo-find-root-dir repo-root-dir)
+                          filename-without-ext))
+         )
+    (if (file-exists-p article) article
+      (replace-regexp-in-string "md$" "org" article))
+
+    ))
 
 ;; ======================================================
 ;; Run Hexo process in Emacs
