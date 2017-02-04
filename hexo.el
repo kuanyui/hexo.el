@@ -177,7 +177,7 @@ Return ((FILE-PATH . BUFFER) ...)"
 If not found, try to `executable-find' hexo in your system."
   (let* ((root-dir (hexo-find-root-dir from-path))
          (guessed-hexo (hexo-path-join root-dir "/node_modules/hexo/bin/hexo")))
-    (if (and root-dir (file-exists-p guessed-hexo))
+    (if (and (not (eq system-type 'windows-nt)) root-dir (file-exists-p guessed-hexo))
         guessed-hexo
       (executable-find "hexo"))))
 
