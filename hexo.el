@@ -808,39 +808,15 @@ under theme/default/layout/"
 (defun hexo--new-interactively (hexo-command)
   (let* ((stdout (shell-command-to-string (format "%s new '%s'"
                                                   hexo-command
-                                                  (read-from-minibuffer "Article URI(xxx or xxx.org): "))))
+                                                  (read-from-minibuffer "Article URI: "))))
          (created-file-path (progn (string-match "Created: \\(.+\\)$" stdout)
                                    (match-string 1 stdout))))
-    (if (string-match ".*-org\\.md" created-file-path)
-        (let ((new-file-path (replace-regexp-in-string ".*\\(-org\\.md\\)" "\.org" created-file-path nil nil 1))
-              )
-          (rename-file created-file-path new-file-path)
-          (find-file new-file-path)
-          (goto-char 0)
-          (replace-regexp "title: .+$" (format "#+TITLE: %s"
-                                               (read-from-minibuffer "Article Title: "
-                                                                     (substring  (car minibuffer-history) 0 -4))))
-          (goto-char 0)
-          (replace-regexp "date:\\(.*$\\)" "#+DATE:\\1" )
-          (goto-char 0)
-          (replace-regexp "tags:\\(.*$\\)" "#+TAGS:\\1" )
-          (goto-char 0)
-          (flush-lines "---")
-          (goto-char (point-max))
-          (insert "#+LAYOUT: \n#+CATEGORIES: \n")
-          ;; (flush-lines "---")
-          )
-      (progn
-        (find-file created-file-path)
-        (goto-char 0)
-        (replace-regexp "title: .+$" (format "title: \"%s\""
-                                             (read-from-minibuffer "Article Title: "
-                                                                   (car minibuffer-history))))
-
-        )
-      )
-    (save-buffer)
-    ))
+    (find-file created-file-path)
+    (goto-char 0)
+    (replace-regexp "title: .+$" (format "title: \"%s\""
+                                         (read-from-minibuffer "Article Title: "
+                                                               (car minibuffer-history))))
+    (save-buffer)))
 
 ;;;###autoload
 (defun hexo-touch-files-in-dir-by-time ()
