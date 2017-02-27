@@ -166,7 +166,8 @@ Return ((FILE-PATH . BUFFER) ...)"
     (let ((lines (split-string (buffer-string) "\n" t)))
       (if (null n)
           lines
-        (cl-remove-if #'null (cl-subseq lines 0 (1- n)))))))
+        (cl-remove-if #'null (cl-subseq lines 0 (min (1- n)
+                                                     (length lines))))))))
 
 (defun hexo-get-file-head-lines-as-string (file-path &optional n)
   "Get first N lines of a file as a string."
