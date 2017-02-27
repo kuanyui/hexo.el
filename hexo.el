@@ -663,15 +663,16 @@ If you want to edit the tags of a single file, use hexo-command-tags-toggler (pr
 (defun hexo-overwrite-tags-to-file (file-path tags-list)
   "TAGS-LIST is a string list"
   (let* ((formatted-tags-list (hexo-format-tags-list tags-list))
+         (file-ext (file-name-extension file-path))
          (old-file-content (hexo-get-file-content-as-string file-path))
          (new-file-content (with-temp-buffer
                              (insert old-file-content)
                              (goto-char (point-min))
-                             (re-search-forward "\\(.*tags:\\)\\(.*\\)" nil t)
-                             (message (match-string-no-properties 0))
-                             (if (string-match-p "#\\+.*" (match-string-no-properties 1))
-                                 (replace-match (format "#+TAGS: %s" formatted-tags-list) t)
-                               (replace-match (format "tags: [%s]" formatted-tags-list) t))
+                             (if (equal file-ext "org")
+                                 (progn (re-search-forward "^ *#\\+tags:.*" nil t)
+                                        (replace-match (format "#+TAGS: %s" formatted-tags-list) t))
+                               (progn (re-search-forward "^tags:.*" nil t)
+                                      (replace-match (format "tags: [%s]" formatted-tags-list) t)))
                              (buffer-string))))
     (hexo-overwrite-file-with-string file-path new-file-content)))
 
