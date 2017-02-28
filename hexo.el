@@ -463,6 +463,7 @@ KEY is a downcased symbol. <ex> 'status "
 (define-key hexo-mode-map (kbd "N") 'hexo-new)
 (define-key hexo-mode-map (kbd "R") 'hexo-command-rename-file)
 (define-key hexo-mode-map (kbd "<f2>") 'hexo-command-rename-file)
+(define-key hexo-mode-map (kbd "D") 'hexo-command-delete-file)
 ;; View
 (define-key hexo-mode-map (kbd "g") 'hexo-command-revert-tabulated-list)
 (define-key hexo-mode-map (kbd "S") 'tabulated-list-sort)
@@ -492,7 +493,8 @@ KEY is a downcased symbol. <ex> 'status "
                     "[RET] Open       [  g] Refresh     [T T] Touch time     [  m] Mark          [s r] Run server   [  ?] Show this help\n"
                     "[SPC] Show Info  [  S] Sort        [T S] Toggle status  [  u] Unmark        [s s] Stop server  [  Q] Quit\n"
                     "[  N] New        [  f] Filter tag  [  t] Tags toggler   [M a] Add tags      [s d] Deploy\n"
-                    "[  R] Rename                                            [M r] Remove tags"))
+                    "[  R] Rename                                            [M r] Remove tags\n"
+                    "[  D] Delete"))
          (help-str-without-brackets (replace-regexp-in-string "[][]" " " help-str 'fixedcase)))
     (mapc (lambda (begin-end)
             (add-face-text-property (car begin-end)
@@ -537,11 +539,26 @@ SUBEXP-DEPTH is 0 by default."
      (message "Please run his command under a Hexo repo directory.")))
 
 (defun hexo-command-open-file ()
-  "Open file under the cursor"
+  "Open the file under the cursor"
   (interactive)
   (hexo-mode-only
    (hexo-mode-article-only
     (find-file (tabulated-list-get-id)))))
+
+(defun hexo-command-delete-file ()
+  "Delete the file under the cursor"
+  (interactive)
+  (hexo-mode-only
+   (hexo-mode-article-only
+    (if (yes-or-no-p (format "Are you sure to delete file '%s' ?\nATTENTION: THIS ACTION CANNOT BE UNDONE!" (tabulated-list-get-id)))
+        (let ((filename (tabulated-list-get-id)))
+          (delete-file filename)
+          (previous-line)
+          (hexo-command-revert-tabulated-list)
+          (next-line)
+          (message (format "File \"%s\" deleted successfully." filename)))
+      (message "Action cancelled; nothing deleted.")
+      ))))
 
 (defun hexo-command-rename-file (&optional init-value)
   "Rename (mv) the filename of the article under the cursor."
