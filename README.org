@@ -27,6 +27,19 @@ You can define your function to open a specified hexo repository directly like t
     (hexo "~/my-blog/"))
 #+END_SRC
 
+** Org-mode Support
+=hexo.el= supports Org-mode
+
+Create a [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Directory-Variables.html][.dir-locals.el]] file at the root path of the hexo repository with the following contents:
+
+#+BEGIN_SRC elisp
+((nil . ((hexo-new-format . org))
+      ))
+#+END_SRC
+
+Now within this repository, =M-x hexo-new= will generate org-mode format file.
+
+
 * Usage
 =M-x hexo= to use =hexo-mode=.
 
