@@ -1010,36 +1010,28 @@ Return absolute path of the article file."
 (defun hexo-insert-article-link ()
   "Insert a link to other article in _posts/."
   (interactive)
-  (if (or (not (or (eq major-mode 'markdown-mode) (eq major-mode 'org-mode)))
+  (if (or (not (member major-mode '(markdown-mode gfm-mode org-mode)))
           (not (hexo-find-root-dir)))
       (message "This command only usable in a hexo article buffer (markdown or org).")
     (let* ((file-path (hexo-completing-read-post))
            (title+permalink (hexo-get-article-title-and-permalink file-path))
            (title (car title+permalink))
            (permalink (cdr title+permalink))
-           (link-format (if (eq major-mode 'markdown-mode)
-                            (list (format "[%s](%s)" title permalink)
-                                  (format "[](%s)" permalink))
-                          (list (format "[[%s][%s]]" permalink title)
-                                (format "[[%s]]" permalink))))
+           (link-format (if (eq major-mode 'org-mode)
+                            (list (format "[[%s][%s]]" permalink title)
+                                  (format "[[%s]]" permalink))
+                          (list (format "[%s](%s)" title permalink)
+                                (format "[](%s)" permalink))))
            (pos (point))
            )
-      (insert (ido-completing-read "Select one to insert: "
-                                   link-format))
-      (if (eq major-mode 'markdown-mode)
-          (progn
-            (backward-sexp 2)
-            (right-char 1)
-            )
-          )
-      )))
+      (insert (ido-completing-read "Select one to insert: " link-format)))))
 
 ;;;###autoload
 (defun hexo-insert-file-link ()
   "Insert the link toward the files in source/ ,
 exclude _posts/ & _drafts/"
   (interactive)
-  (if (or (not (eq major-mode 'markdown-mode))
+  (if (or (not (member major-mode '(markdown-mode gfm-mode)))
           (not (hexo-find-root-dir)))
       (message "This command only usable in a hexo article buffer (markdown).")
     (let* ((source-dir-fullpath (concat (hexo-find-root-dir) "source/"))
@@ -1050,7 +1042,7 @@ exclude _posts/ & _drafts/"
                                                t
                                                nil
                                                (lambda (x) (not (or (string-match "_posts/" x)
-                                                               (string-match "_drafts/" x)))))))
+                                                                    (string-match "_drafts/" x)))))))
            (file-link (substring file-fullpath (1- (length source-dir-fullpath))))
            (text (file-name-nondirectory file-fullpath)))
       (insert (ido-completing-read "Select one to insert: "
@@ -1081,7 +1073,7 @@ exclude _posts/ & _drafts/"
   "[Link](/2015/coscup-2015/) => /2015/coscup-2015/
 Return the link. If not found link under cursor, return nil."
   (save-excursion
-    (if (eq major-mode 'markdown-mode)
+    (if (member major-mode '(markdown-mode gfm-mode))
         (let* ((original (point))
                (beg (search-backward "["))
                (end (search-forward ")"))
@@ -1097,15 +1089,15 @@ Return the link. If not found link under cursor, return nil."
              (str (buffer-substring beg end))
              (url (progn (string-match "\\[\\[\\(.+?\\)\\].*" str)
                          (match-string 1 str))))
-          (if (and (>= original beg) (<= original end))
-              url
-            nil)))
+        (if (and (>= original beg) (<= original end))
+            url
+          nil)))
 
     ))
 
 (defun hexo-get-file-path-from-post-permalink (permalink &optional repo-root-dir)
   "/2015/coscup-2015/ <= this is permalink
-This is only resonable for files in _posts/."
+This is merely resonable for files in _posts/."
   (let* ((filename-without-ext (progn (string-match "/?\\([^/]+\\)/?$" permalink)
                                       (match-string 1 permalink)))
          (article (format "%s/source/_posts/%s.md"
