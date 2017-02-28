@@ -886,8 +886,7 @@ You can run this function in dired or a hexo article."
                (progn (tabulated-list-revert)
                       (search-forward file-name nil t))
              (message "Two filenames duplicated in _posts/ and _drafts/. Abort."))))
-        ((and (or  (eq major-mode 'markdown-mode)
-                   (eq major-mode 'org-mode))
+        ((and (member major-mode '(org-mode markdown-mode gfm-mode))
               (hexo-find-root-dir))
          (let ((new-path (hexo--toggle-article-status (buffer-file-name))))
            (if new-path
@@ -1031,9 +1030,9 @@ Return absolute path of the article file."
   "Insert the link toward the files in source/ ,
 exclude _posts/ & _drafts/"
   (interactive)
-  (if (or (not (member major-mode '(markdown-mode gfm-mode)))
+  (if (or (not (member major-mode '(markdown-mode gfm-mode org-mode)))
           (not (hexo-find-root-dir)))
-      (message "This command only usable in a hexo article buffer (markdown).")
+      (message "This command only usable in a hexo article buffer (markdown or org-mode).")
     (let* ((source-dir-fullpath (concat (hexo-find-root-dir) "source/"))
            (file-fullpath (file-truename ;[FIXME] Fucking useless ido-read-file-name
                            (ido-read-file-name "Input file path: "
@@ -1046,7 +1045,9 @@ exclude _posts/ & _drafts/"
            (file-link (substring file-fullpath (1- (length source-dir-fullpath))))
            (text (file-name-nondirectory file-fullpath)))
       (insert (ido-completing-read "Select one to insert: "
-                                   (list (format "[%s](%s)" text file-link)
+                                   (list (if (eq major-mode 'org-mode)
+                                             (format "[[%s][%s]]" file-link text)
+                                           (format "[%s](%s)" text file-link))
                                          file-link))))))
 
 ;;;###autoload
