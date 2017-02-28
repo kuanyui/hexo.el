@@ -372,13 +372,13 @@ FILTER is a function with one arg."
     (cl-remove-if
      #'null
      (mapcar (lambda (line)
-               (cond ((string-match "title: ?\\(.+\\)" line)
+               (cond ((string-match "title: *\\(.+\\)" line)
                       (cons 'title (hexo-trim (match-string 1 line))))
-                     ((string-match "date: ?\\([0-9-/.]+\\)" line) ;hide time
+                     ((string-match "date: *<?\\([0-9-/.]+\\)" line) ;hide time
                       (cons 'date (match-string 1 line)))
-                     ((string-match "tags: ?\\(.+\\)" line)
+                     ((string-match "tags: *\\(.+\\)" line)
                       (cons 'tags (hexo-parse-tags (match-string 1 line))))
-                     ((string-match "categories: ?\\(.+\\)" line)
+                     ((string-match "categories: *\\(.+\\)" line)
                       (cons 'categories (hexo-parse-tags (match-string 1 line))))
                      (t nil)))
              head-lines))))
