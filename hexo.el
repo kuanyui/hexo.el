@@ -382,7 +382,7 @@ FILTER is a function with one arg."
   (date . date)
   (tags . (tags ...))
   (categories . (categories ...)))"
-  (let ((head-lines (hexo-get-file-head-lines file-path 6)))
+  (let ((head-lines (hexo-get-file-head-lines file-path 10)))
     (cl-remove-if
      #'null
      (mapcar (lambda (line)
