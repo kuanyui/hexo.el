@@ -836,9 +836,9 @@ under theme/default/layout/"
       url)))
 
 (defun hexo--new-interactively (hexo-command)
-  (let* ((stdout (shell-command-to-string (format "%s new '%s'"
-                                                  hexo-command
-                                                  (hexo--new-read-url-from-user))))
+  (let* ((title (hexo--new-read-url-from-user))
+         (stdout (shell-command-to-string (format "%s new '%s'"
+                                                  hexo-command title)))
          (created-md-file-path (progn (string-match "Created: \\(.+\\)$" stdout)
                                       (match-string 1 stdout)))
          (created-org-file-path (concat (file-name-sans-extension created-md-file-path) ".org")))
@@ -852,11 +852,7 @@ under theme/default/layout/"
            (goto-char (point-max))
            (insert "#+LAYOUT: \n#+CATEGORIES: \n")
            (goto-char 0)
-           (replace-regexp "title: .+$"
-                           (format "#+TITLE: \"%s\""
-                                   (read-from-minibuffer "Article Title: "
-                                                         (car minibuffer-history))))
-           )
+           (replace-regexp "title: .+$" (format "#+TITLE: %s" title)))
           (t
            (find-file created-md-file-path)
            (goto-char 0)
