@@ -45,7 +45,7 @@ Now within this repository, =M-x hexo-new= will generate org-mode format file.
 
 ** Common Commands
 
-The following commands are available in =markdown-mode=, =dired-mode=, =hexo-mode= 
+The following commands are available in =markdown-mode=, =dired-mode=, =hexo-mode=
 
 | Command                         | Description                                                                |
 |---------------------------------+----------------------------------------------------------------------------|
@@ -116,6 +116,15 @@ Prefix ~hexo-command-~ means the function is only available under ~hexo-mode~
 | ~hexo-command-help~                  | ~h~, ~?~    | Show key-binding cheat sheet                                               |
 | ~kill-buffer-and-window~             | ~Q~       | Quit                                                                       |
 
+
+* Customization
+
+** hexo-shell-command-separator
+=hexo-shell-command-separator= is set to =&&= by default. But if you are using fish-shell you can change it to =; and= as following:
+
+#+BEGIN_SRC elisp
+(setq hexo-shell-command-separator "; and")
+#+END_SRC
 
 * License
 MIT
