@@ -1153,21 +1153,36 @@ This is merely resonable for files in _posts/."
                             (hexo-find-command repo-path)
                             command-string))
 
+(defcustom hexo-shell-command-separator "&&"
+  "Default is &&, you may change it to `; and` in case you are using fish"
+  :group 'hexo
+  :type '(string))
+
+(defcustom hexo--server-run-command (format "hexo clean %s hexo generate %s hexo server --debug" hexo-shell-command-separator hexo-shell-command-separator)
+  "Hexo server run command"
+  :group 'hexo
+  :type '(string))
+
+(defcustom hexo--server-deploy-command (format "hexo clean %s hexo generate %s hexo deploy" hexo-shell-command-separator hexo-shell-command-separator)
+  "Hexo server deploy command"
+  :group 'hexo
+  :type '(string))
+
 (defun hexo-server-run ()
   "Run a Hexo server process (posts only / posts + drafts)"
   (interactive)
   (hexo-repo-only
    (let ((type (ido-completing-read "[Hexo server] Type: " '("posts-only" "posts+drafts") nil t)))
      (cond ((string= type "posts+drafts")
-            (hexo-start-process-shell-command "hexo clean && hexo generate && hexo server --debug --drafts"))
+            (hexo-start-process-shell-command (concat hexo--server-run-command " --drafts")))
            ((string= type "posts-only")
-            (hexo-start-process-shell-command "hexo clean && hexo generate && hexo server --debug"))))))
+            (hexo-start-process-shell-command hexo--server-run-command))))))
 
 (defun hexo-server-deploy ()
   "Deploy via hexo server."
   (interactive)
   (hexo-repo-only
-   (hexo-start-process-shell-command "hexo clean && hexo generate && hexo deploy")))
+   (hexo-start-process-shell-command hexo--server-deploy-command)))
 
 (defun hexo-server-stop ()
   "Stop all Hexo server processes (posts only / posts + drafts)"
