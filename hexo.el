@@ -42,6 +42,17 @@
 See `hexo-setq-tabulated-list-entries'")
 (put 'hexo-tabulated-list-entries-filter 'permanent-local t)
 
+(defvar hexo-posix-compatible-shell-file-path nil
+  "Forcely specify a POSIX-compatible shell executable path for hexo-mode.
+  This is only usable if you've set `shell-file-name' beyond
+bash/zsh (ex: fish). hexo.el supports only POSIX-compatible
+shell, so please tell me where it is.")
+
+(defvar hexo-shell-command-switch nil
+  "Forcely specify the switch for shell command (ex: \"-ic\" for bash).
+ If nil, hexo.el will use `shell-command-switch' by default.
+Please choose a POSIX-compatible shell.")
+
 (defvar hexo-process nil
   "Hexo process object.")
 
@@ -103,6 +114,7 @@ See `hexo-setq-tabulated-list-entries'")
 ;; ======================================================
 ;; Small tools
 ;; ======================================================
+
 (defmacro hexo-mode-only (&rest body)
   `(if (eq major-mode 'hexo-mode)
        (progn ,@body)
@@ -239,14 +251,22 @@ Output contains suffix '/' "
              (sit-for 5)
              (hexo-ask-for-root-dir)))))
 
+(defun hexo-shell-command-to-string (command)
+  "Execute shell command COMMAND and return its output as a string."
+  (with-output-to-string
+    (with-current-buffer
+        standard-output
+      (process-file (or hexo-posix-compatible-shell-file-path shell-file-name)
+                    nil t nil
+                    (or hexo-shell-command-switch shell-command-switch) command))))
 
 (defun hexo-run-shell-command (args-string)
   "If not found hexo, return nil"
   (if (executable-find "hexo")
-      (shell-command-to-string (concat "hexo" args-string))
+      (hexo-shell-command-to-string (concat "hexo" args-string))
     (let ((hexo (hexo-find-command)))
       (if hexo
-          (shell-command-to-string (concat hexo args-string))
+          (hexo-shell-command-to-string (concat hexo args-string))
         nil))))
 
 (defun hexo-sort-string-list (string-list)
@@ -320,12 +340,12 @@ Also see: `hexo-generate-tabulated-list-entries'"
 "
   (if (file-exists-p dir-path)
       (cl-remove-if (lambda (x) (or
-                            (not (file-exists-p x))
-                            (and (not (string-suffix-p ".md" x))
-                                 (not (string-suffix-p ".org" x)))
-                            (member (file-name-base x) '("." ".."))
-                            ;;(string-suffix-p "#" x) ;useless
-                            (string-suffix-p "~" x)))
+                                 (not (file-exists-p x))
+                                 (and (not (string-suffix-p ".md" x))
+                                      (not (string-suffix-p ".org" x)))
+                                 (member (file-name-base x) '("." ".."))
+                                 ;;(string-suffix-p "#" x) ;useless
+                                 (string-suffix-p "~" x)))
                     (directory-files dir-path 'full))
     '()                                 ;if dir-path is not exist, return nil.
     ))
@@ -836,9 +856,9 @@ under theme/default/layout/"
       url)))
 
 (defun hexo--new-interactively (hexo-command)
-  (let* ((stdout (shell-command-to-string (format "%s new '%s'"
-                                                  hexo-command
-                                                  (hexo--new-read-url-from-user))))
+  (let* ((stdout (hexo-shell-command-to-string (format "%s new '%s'"
+                                                       hexo-command
+                                                       (hexo--new-read-url-from-user))))
          (created-md-file-path (progn (string-match "Created: \\(.+\\)$" stdout)
                                       (match-string 1 stdout)))
          (created-org-file-path (concat (file-name-sans-extension created-md-file-path) ".org")))
@@ -886,7 +906,7 @@ make it easy to sort file according date in Dired or `hexo-mode'."
                                                        file)
                                              " ")))    ;If not found "date: ", return an empty command
                                        (hexo-get-all-article-files))))
-      (shell-command (mapconcat #'identity touch-commands-list ";"))
+      (hexo-shell-command-to-string (mapconcat #'identity touch-commands-list ";"))
       (revert-buffer)
       (message "Done."))))
 
