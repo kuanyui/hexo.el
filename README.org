@@ -9,6 +9,7 @@ Emacs major-mode & tools for [[https://github.com/hexojs/hexo][Hexo]]. σ(´∀�
 * Requirement
 - hexo
 - Emacs >= 24.3
+- bash or any POSIX-compatible shell
 
 * Install
 
@@ -26,6 +27,15 @@ You can define your function to open a specified hexo repository directly like t
     (interactive)
     (hexo "~/my-blog/"))
 #+END_SRC
+
+** Not A Bash / Zsh User?
+
+If you're using a shell beyond =bash= / =zsh= (ex: =fish=), you may have set =shell-file-name= to your prefered shell. However this would broken some functions of =hexo.el=. To prevent this, please specify the path to a POSIX-compatible shell.
+
+#+BEGIN_SRC elisp
+(setq hexo-posix-compatible-shell-file-path "/bin/bash")
+#+END_SRC
+
 
 ** Org-mode Support
 =hexo.el= now experimentally supports Org-mode via [[https://github.com/CodeFalling/hexo-renderer-org][CodeFalling's hexo-renderer-org]]. If you encounter any problem, please feel free to open issue for that. Thanks!
@@ -45,7 +55,7 @@ Now within this repository, =M-x hexo-new= will generate org-mode format file.
 
 ** Common Commands
 
-The following commands are available in =markdown-mode=, =dired-mode=, =hexo-mode= 
+The following commands are available in =markdown-mode=, =dired-mode=, =hexo-mode=
 
 | Command                         | Description                                                                |
 |---------------------------------+----------------------------------------------------------------------------|
