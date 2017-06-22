@@ -136,6 +136,13 @@ Please choose a POSIX-compatible shell.")
        (progn ,@body)
      (message "Please run his command under a Hexo repo directory.")))
 
+(defmacro hexo-ensure-hexo-executable-available (&rest body)
+  "In BODY, variable `hexo-executable-path' is available."
+  `(let ((hexo-executable-path (hexo-find-hexo-executable)))
+     (if hexo-executable-path
+         (progn ,@body)
+       (message "Cannot find hexo executable in node_modules/ of this repository nor in $PATH"))))
+
 (defun hexo-find-hexo-executable (&optional from-path)
   "Try to find hexo in node_modules/ directory.
 If not found, try to `executable-find' hexo in your system."
@@ -827,12 +834,37 @@ truncated by `tabulated-list'."
 That's to say, you can use this function to create new post, even though
 under theme/default/layout/"
   (interactive)
-  (let ((hexo-command (hexo-find-hexo-executable)))
-    (cond ((not (hexo-find-root-dir))                     ; not in a hexo repo
-           (message "You should run this command under a Hexo repo, or in a hexo-mode buffer"))
-          ((null hexo-command)                            ; not found hexo command
-           (message "Not found hexo command in your node_modules/ nor $PATH,"))
-          (t (hexo--new-interactively hexo-command)))))
+  (hexo-repo-only
+   (hexo-ensure-hexo-executable-available
+    (let* ((stdout (shell-command-to-string (format "%s new '%s'"
+                                                    hexo-executable-path
+                                                    (hexo--new-read-url-from-user))))
+           (created-md-file-path (progn (string-match "Created: \\(.+\\)$" stdout)
+                                        (match-string 1 stdout)))
+           (created-org-file-path (concat (file-name-sans-extension created-md-file-path) ".org")))
+      (cond ((eq hexo-new-format 'org)
+             (rename-file created-md-file-path created-org-file-path)
+             (find-file created-org-file-path)
+             (goto-char 0) (replace-regexp "date:.*"
+                                           (concat "#+DATE: " (format-time-string "<%Y-%m-%d %a %H:%M>")))
+             (goto-char 0) (replace-regexp "^ *tags: *" "#+TAGS: " )
+             (goto-char 0) (flush-lines "---")
+             (goto-char (point-max))
+             (insert "#+LAYOUT: \n#+CATEGORIES: \n")
+             (goto-char 0)
+             (replace-regexp "title: .+$"
+                             (format "#+TITLE: \"%s\""
+                                     (read-from-minibuffer "Article Title: "
+                                                           (car minibuffer-history))))
+             )
+            (t
+             (find-file created-md-file-path)
+             (goto-char 0)
+             (replace-regexp "title: .+$"
+                             (format "title: \"%s\""
+                                     (read-from-minibuffer "Article Title: "
+                                                           (car minibuffer-history))))))
+      (save-buffer)))))
 
 (defun hexo--new-read-url-from-user (&optional init-content)
   (interactive)
@@ -845,60 +877,29 @@ under theme/default/layout/"
                (hexo--new-read-url-from-user url))
       url)))
 
-(defun hexo--new-interactively (hexo-command)
-  (let* ((stdout (hexo-shell-command-to-string (format "%s new '%s'"
-                                                       hexo-command
-                                                       (hexo--new-read-url-from-user))))
-         (created-md-file-path (progn (string-match "Created: \\(.+\\)$" stdout)
-                                      (match-string 1 stdout)))
-         (created-org-file-path (concat (file-name-sans-extension created-md-file-path) ".org")))
-    (cond ((eq hexo-new-format 'org)
-           (rename-file created-md-file-path created-org-file-path)
-           (find-file created-org-file-path)
-           (goto-char 0) (replace-regexp "date:.*"
-                                         (concat "#+DATE: " (format-time-string "<%Y-%m-%d %a %H:%M>")))
-           (goto-char 0) (replace-regexp "^ *tags: *" "#+TAGS: " )
-           (goto-char 0) (flush-lines "---")
-           (goto-char (point-max))
-           (insert "#+LAYOUT: \n#+CATEGORIES: \n")
-           (goto-char 0)
-           (replace-regexp "title: .+$"
-                           (format "#+TITLE: \"%s\""
-                                   (read-from-minibuffer "Article Title: "
-                                                         (car minibuffer-history))))
-           )
-          (t
-           (find-file created-md-file-path)
-           (goto-char 0)
-           (replace-regexp "title: .+$"
-                           (format "title: \"%s\""
-                                   (read-from-minibuffer "Article Title: "
-                                                         (car minibuffer-history))))))
-    (save-buffer)))
 
 ;;;###autoload
 (defun hexo-touch-files-in-dir-by-time ()
   "`touch' markdown article files according their \"date: \" to
 make it easy to sort file according date in Dired or `hexo-mode'."
   (interactive)
-  (if (not (or hexo-root-dir (hexo-find-root-dir)))
-      (message "Please run this command under a hexo repository.")
-    (let ((touch-commands-list (mapcar (lambda (file)
-                                         (let ((head (hexo-get-file-head-lines-as-string file 5)))
-                                           (if (string-match "^date: \\([0-9]+\\)-\\([0-9]+\\)-\\([0-9]+\\) \\([0-9]+\\):\\([0-9]+\\):\\([0-9]+\\)$" head)
-                                               (format "touch -t %s%s%s%s%s.%s %s"
-                                                       (match-string 1 head)
-                                                       (match-string 2 head)
-                                                       (match-string 3 head)
-                                                       (match-string 4 head)
-                                                       (match-string 5 head)
-                                                       (match-string 6 head)
-                                                       file)
-                                             " ")))    ;If not found "date: ", return an empty command
-                                       (hexo-get-all-article-files))))
-      (hexo-shell-env (shell-command (mapconcat #'identity touch-commands-list ";")))
-      (revert-buffer)
-      (message "Done."))))
+  (hexo-repo-only
+   (let ((touch-commands-list (mapcar (lambda (file)
+                                        (let ((head (hexo-get-file-head-lines-as-string file 5)))
+                                          (if (string-match "^date: \\([0-9]+\\)-\\([0-9]+\\)-\\([0-9]+\\) \\([0-9]+\\):\\([0-9]+\\):\\([0-9]+\\)$" head)
+                                              (format "touch -t %s%s%s%s%s.%s %s"
+                                                      (match-string 1 head)
+                                                      (match-string 2 head)
+                                                      (match-string 3 head)
+                                                      (match-string 4 head)
+                                                      (match-string 5 head)
+                                                      (match-string 6 head)
+                                                      file)
+                                            " ")))    ;If not found "date: ", return an empty command
+                                      (hexo-get-all-article-files))))
+     (hexo-shell-env (shell-command (mapconcat #'identity touch-commands-list ";")))
+     (revert-buffer)
+     (message "Done."))))
 
 ;;;###autoload
 (defun hexo-toggle-article-status ()
@@ -1160,9 +1161,8 @@ This is merely resonable for files in _posts/."
 
 (defun hexo-replace-hexo-command-to-path (command-string &optional repo-path)
   "Replace all 'hexo' in COMMAND-STRING to hexo command's path"
-  (replace-regexp-in-string "_HEXO"
-                            (hexo-find-hexo-executable repo-path)
-                            command-string))
+  (hexo-ensure-hexo-executable-available
+   (replace-regexp-in-string "_HEXO" hexo-executable-path command-string)))
 
 (defun hexo-server-run ()
   "Run a Hexo server process (posts only / posts + drafts)"
