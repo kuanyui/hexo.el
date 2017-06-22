@@ -115,6 +115,12 @@ Please choose a POSIX-compatible shell.")
 ;; Small tools
 ;; ======================================================
 
+(defmacro hexo-shell-env (&rest body)
+  "Overwrite variables for shell temporarily"
+  `(let ((shell-file-name (or hexo-posix-compatible-shell-file-path shell-file-name))
+         (shell-command-switch (or hexo-shell-command-switch shell-command-switch)))
+     (progn ,@body)))
+
 (defmacro hexo-mode-only (&rest body)
   `(if (eq major-mode 'hexo-mode)
        (progn ,@body)
@@ -251,23 +257,15 @@ Output contains suffix '/' "
              (sit-for 5)
              (hexo-ask-for-root-dir)))))
 
-(defun hexo-shell-command-to-string (command)
-  "Execute shell command COMMAND and return its output as a string."
-  (with-output-to-string
-    (with-current-buffer
-        standard-output
-      (process-file (or hexo-posix-compatible-shell-file-path shell-file-name)
-                    nil t nil
-                    (or hexo-shell-command-switch shell-command-switch) command))))
-
 (defun hexo-run-shell-command (args-string)
   "If not found hexo, return nil"
-  (if (executable-find "hexo")
-      (hexo-shell-command-to-string (concat "hexo" args-string))
-    (let ((hexo (hexo-find-command)))
-      (if hexo
-          (hexo-shell-command-to-string (concat hexo args-string))
-        nil))))
+  (hexo-shell-env
+   (if (executable-find "hexo")
+       (shell-command-to-string (concat "hexo" args-string))
+     (let ((hexo (hexo-find-command)))
+       (if hexo
+           (shell-command-to-string (concat hexo args-string))
+         nil)))))
 
 (defun hexo-sort-string-list (string-list)
   (sort string-list #'string<))
@@ -906,7 +904,7 @@ make it easy to sort file according date in Dired or `hexo-mode'."
                                                        file)
                                              " ")))    ;If not found "date: ", return an empty command
                                        (hexo-get-all-article-files))))
-      (hexo-shell-command-to-string (mapconcat #'identity touch-commands-list ";"))
+      (hexo-shell-env (shell-command (mapconcat #'identity touch-commands-list ";")))
       (revert-buffer)
       (message "Done."))))
 
@@ -1152,19 +1150,20 @@ This is merely resonable for files in _posts/."
 
 (defvar hexo-process-buffer-name "*hexo-process*")
 
-(defun hexo-start-process-shell-command (command-string &optional repo-path)
+(defun hexo-open-buffer-and-run-shell-command (command-string &optional repo-path)
   "COMMAND-STRING example:
 \"hexo clean && hexo generate && hexo server --debug\""
-  (if (process-live-p hexo-process)
-      (progn (interrupt-process hexo-process)
-             (sit-for 0.5)))            ;WTF
-  (if (get-buffer hexo-process-buffer-name)
-      (kill-buffer hexo-process-buffer-name))
-  (async-shell-command (hexo-replace-hexo-command-to-path command-string repo-path)
-                       hexo-process-buffer-name)
-  (setq hexo-process (get-buffer-process hexo-process-buffer-name))
-  (set-process-filter hexo-process 'comint-output-filter)
-  (pop-to-buffer hexo-process-buffer-name))
+  (hexo-shell-env
+   (if (process-live-p hexo-process)
+       (progn (interrupt-process hexo-process)
+              (sit-for 0.5)))            ;WTF
+   (if (get-buffer hexo-process-buffer-name)
+       (kill-buffer hexo-process-buffer-name))
+   (async-shell-command (hexo-replace-hexo-command-to-path command-string repo-path)
+                        hexo-process-buffer-name)
+   (setq hexo-process (get-buffer-process hexo-process-buffer-name))
+   (set-process-filter hexo-process 'comint-output-filter)
+   (pop-to-buffer hexo-process-buffer-name)))
 
 
 (defun hexo-replace-hexo-command-to-path (command-string &optional repo-path)
@@ -1179,15 +1178,15 @@ This is merely resonable for files in _posts/."
   (hexo-repo-only
    (let ((type (ido-completing-read "[Hexo server] Type: " '("posts-only" "posts+drafts") nil t)))
      (cond ((string= type "posts+drafts")
-            (hexo-start-process-shell-command "hexo clean && hexo generate && hexo server --debug --drafts"))
+            (hexo-open-buffer-and-run-shell-command "hexo clean && hexo generate && hexo server --debug --drafts"))
            ((string= type "posts-only")
-            (hexo-start-process-shell-command "hexo clean && hexo generate && hexo server --debug"))))))
+            (hexo-open-buffer-and-run-shell-command "hexo clean && hexo generate && hexo server --debug"))))))
 
 (defun hexo-server-deploy ()
   "Deploy via hexo server."
   (interactive)
   (hexo-repo-only
-   (hexo-start-process-shell-command "hexo clean && hexo generate && hexo deploy")))
+   (hexo-open-buffer-and-run-shell-command "hexo clean && hexo generate && hexo deploy")))
 
 (defun hexo-server-stop ()
   "Stop all Hexo server processes (posts only / posts + drafts)"
