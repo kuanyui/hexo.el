@@ -136,6 +136,17 @@ Please choose a POSIX-compatible shell.")
        (progn ,@body)
      (message "Please run his command under a Hexo repo directory.")))
 
+(defun hexo-find-hexo-executable (&optional from-path)
+  "Try to find hexo in node_modules/ directory.
+If not found, try to `executable-find' hexo in your system."
+  (let* ((root-dir (hexo-find-root-dir from-path))
+         (guessed-hexo (hexo-path-join root-dir "/node_modules/hexo/bin/hexo")))
+    (if (and (not (eq system-type 'windows-nt)) ; why windows-nt? I forgot.
+             root-dir
+             (file-exists-p guessed-hexo))
+        guessed-hexo
+      (executable-find "hexo"))))
+
 (defun hexo-path-join (&rest paths)
   "Like os.path.join() in Python 3"
   (let* ((-paths (remove-if (lambda (x) (or (null x)
@@ -208,15 +219,6 @@ Return ((FILE-PATH . BUFFER) ...)"
   "Get first N lines of a file as a string."
   (mapconcat #'identity (hexo-get-file-head-lines file-path n) "\n"))
 
-(defun hexo-find-command (&optional from-path)
-  "Try to find hexo in node_modules/ directory.
-If not found, try to `executable-find' hexo in your system."
-  (let* ((root-dir (hexo-find-root-dir from-path))
-         (guessed-hexo (hexo-path-join root-dir "/node_modules/hexo/bin/hexo")))
-    (if (and (not (eq system-type 'windows-nt)) root-dir (file-exists-p guessed-hexo))
-        guessed-hexo
-      (executable-find "hexo"))))
-
 (defun hexo-path (path)
   "Return a formal formatted path string.
  If path is a directory, suffix will be / added. Else, remove /."
@@ -256,16 +258,6 @@ Output contains suffix '/' "
       (progn (message "Seems not a valid Hexo repository. Please try again.")
              (sit-for 5)
              (hexo-ask-for-root-dir)))))
-
-(defun hexo-run-shell-command (args-string)
-  "If not found hexo, return nil"
-  (hexo-shell-env
-   (if (executable-find "hexo")
-       (shell-command-to-string (concat "hexo" args-string))
-     (let ((hexo (hexo-find-command)))
-       (if hexo
-           (shell-command-to-string (concat hexo args-string))
-         nil)))))
 
 (defun hexo-sort-string-list (string-list)
   (sort string-list #'string<))
@@ -835,7 +827,7 @@ truncated by `tabulated-list'."
 That's to say, you can use this function to create new post, even though
 under theme/default/layout/"
   (interactive)
-  (let ((hexo-command (hexo-find-command)))
+  (let ((hexo-command (hexo-find-hexo-executable)))
     (cond ((not (hexo-find-root-dir))                     ; not in a hexo repo
            (message "You should run this command under a Hexo repo, or in a hexo-mode buffer"))
           ((null hexo-command)                            ; not found hexo command
@@ -1168,8 +1160,8 @@ This is merely resonable for files in _posts/."
 
 (defun hexo-replace-hexo-command-to-path (command-string &optional repo-path)
   "Replace all 'hexo' in COMMAND-STRING to hexo command's path"
-  (replace-regexp-in-string "hexo"
-                            (hexo-find-command repo-path)
+  (replace-regexp-in-string "_HEXO"
+                            (hexo-find-hexo-executable repo-path)
                             command-string))
 
 (defun hexo-server-run ()
@@ -1178,15 +1170,15 @@ This is merely resonable for files in _posts/."
   (hexo-repo-only
    (let ((type (ido-completing-read "[Hexo server] Type: " '("posts-only" "posts+drafts") nil t)))
      (cond ((string= type "posts+drafts")
-            (hexo-open-buffer-and-run-shell-command "hexo clean && hexo generate && hexo server --debug --drafts"))
+            (hexo-open-buffer-and-run-shell-command "_HEXO clean && _HEXO generate && _HEXO server --debug --drafts"))
            ((string= type "posts-only")
-            (hexo-open-buffer-and-run-shell-command "hexo clean && hexo generate && hexo server --debug"))))))
+            (hexo-open-buffer-and-run-shell-command "_HEXO clean && _HEXO generate && _HEXO server --debug"))))))
 
 (defun hexo-server-deploy ()
   "Deploy via hexo server."
   (interactive)
   (hexo-repo-only
-   (hexo-open-buffer-and-run-shell-command "hexo clean && hexo generate && hexo deploy")))
+   (hexo-open-buffer-and-run-shell-command "_HEXO clean && _HEXO generate && _HEXO deploy")))
 
 (defun hexo-server-stop ()
   "Stop all Hexo server processes (posts only / posts + drafts)"
