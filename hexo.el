@@ -7,7 +7,7 @@
 ;; Version: {{VERSION}}
 
 ;; License: MIT
-;; Ono Hiroko (kuanyui) (c) Copyright 2016
+;; Ono Hiroko (kuanyui) (c) Copyright 2016-2017
 
 ;;; Commentary:
 ;;
