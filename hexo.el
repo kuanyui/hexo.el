@@ -33,6 +33,11 @@
   "Faces used in `hexo-mode'"
   :group 'hexo :group 'faces)
 
+(defcustom article-suffixies '(".md" ".org")
+  "available article suffixies"
+  :group 'hexo
+  :type '(repeat string))
+
 (defvar-local hexo-root-dir nil
   "Root directory of a hexo-mode buffer")
 (put 'hexo-root-dir 'permanent-local t)
@@ -338,8 +343,9 @@ Also see: `hexo-generate-tabulated-list-entries'"
   (if (file-exists-p dir-path)
       (cl-remove-if (lambda (x) (or
                                  (not (file-exists-p x))
-                                 (and (not (string-suffix-p ".md" x))
-                                      (not (string-suffix-p ".org" x)))
+								 (not (member
+									   (concat "." (file-name-extension x))
+									   article-suffixies))
                                  (member (file-name-base x) '("." ".."))
                                  ;;(string-suffix-p "#" x) ;useless
                                  (string-suffix-p "~" x)))
