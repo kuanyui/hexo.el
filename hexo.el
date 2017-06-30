@@ -1164,7 +1164,7 @@ This is merely resonable for files in _posts/."
 (defun hexo-replace-hexo-command-to-path (command-string &optional repo-path)
   "Replace all 'hexo' in COMMAND-STRING to hexo command's path"
   (hexo-ensure-hexo-executable-available
-   (replace-regexp-in-string "_HEXO" hexo-executable-path command-string)))
+   (replace-regexp-in-string "_HEXO" hexo-executable-path command-string t)))
 
 (defun hexo-server-run ()
   "Run a Hexo server process (posts only / posts + drafts)"
