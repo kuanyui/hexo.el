@@ -855,7 +855,7 @@ under theme/default/layout/"
               (insert "#+LAYOUT: \n#+CATEGORIES: \n")
               (goto-char 0)
               (replace-regexp "title: .+$"
-                              (format "#+TITLE: \"%s\""
+                              (format "#+TITLE: %s"
                                       (read-from-minibuffer "Article Title: "
                                                             (car minibuffer-history))))
               )
