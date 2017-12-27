@@ -1130,14 +1130,12 @@ Return the link. If not found link under cursor, return nil."
 This is merely resonable for files in _posts/."
   (let* ((filename-without-ext (progn (string-match "/?\\([^/]+\\)/?$" permalink)
                                       (match-string 1 permalink)))
-         (article (format "%s/source/_posts/%s.md"
-                          (hexo-find-root-dir repo-root-dir)
-                          filename-without-ext))
-         )
-    (if (file-exists-p article) article
-      (replace-regexp-in-string "md$" "org" article))
-
-    ))
+         (filepath-without-ext (format "%s/source/_posts/%s"
+                                       (hexo-find-root-dir repo-root-dir)
+                                       filename-without-ext)))
+    (find-if (lambda (fullpath) (file-exists-p fullpath))
+             (mapcar (lambda (ext) (format "%s.%s" filepath-without-ext ext))
+                     '("org" "md")))))
 
 ;; ======================================================
 ;; Run Hexo process in Emacs
