@@ -254,7 +254,7 @@ Output contains suffix '/' "
                (nodes-without-node_modules (reverse (nthcdr from-nth (reverse nodes))))
                (path-string (mapconcat #'identity nodes-without-node_modules "/")))
           (hexo-path path-string))
-      (hexo-path (locate-dominating-file from "node_modules/")))))
+      (hexo-path (locate-dominating-file from "node_modules/hexo")))))
 
 
 (defun hexo-ask-for-root-dir ()
