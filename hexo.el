@@ -374,7 +374,7 @@ FILTER is a function with one arg."
   (replace-regexp-in-string regexp "" string t))
 
 (defun hexo-trim-quotes (string)
-  (hexo-remove-regexp "[\"']$" (hexo-remove-regexp "^[\"']" string)))
+  (hexo-remove-regexp "[\"']$" (hexo-remove-regexp "^[\"']" (hexo-trim-spaces string))))
 
 (defun hexo-trim-spaces (string)
   (hexo-remove-regexp " *$" (hexo-remove-regexp "^ *" string)))
