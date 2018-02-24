@@ -1152,17 +1152,21 @@ This is merely resonable for files in _posts/."
               (sit-for 0.5)))            ;WTF
    (if (get-buffer hexo-process-buffer-name)
        (kill-buffer hexo-process-buffer-name))
-   (async-shell-command (hexo-replace-hexo-command-to-path command-string repo-path)
-                        hexo-process-buffer-name)
-   (setq hexo-process (get-buffer-process hexo-process-buffer-name))
-   (set-process-filter hexo-process 'comint-output-filter)
-   (pop-to-buffer hexo-process-buffer-name)))
+   (let ((buffer-obj (get-buffer-create hexo-process-buffer-name)))
+     (pop-to-buffer buffer-obj)
+     (with-current-buffer buffer-obj
+       (setq default-directory (hexo-find-root-dir repo-path)))
+     (async-shell-command (hexo-replace-hexo-command-to-path command-string repo-path)
+                          buffer-obj)
+     (setq hexo-process (get-buffer-process buffer-obj))
+     (set-process-filter hexo-process 'comint-output-filter)
+     )))
 
 
 (defun hexo-replace-hexo-command-to-path (command-string &optional repo-path)
-  "Replace all 'hexo' in COMMAND-STRING to hexo command's path"
+  "Replace all '__HEXO__' in COMMAND-STRING to hexo command's path"
   (hexo-ensure-hexo-executable-available
-   (replace-regexp-in-string "_HEXO" hexo-executable-path command-string t)))
+   (replace-regexp-in-string "__HEXO__" hexo-executable-path command-string t)))
 
 (defun hexo-server-run ()
   "Run a Hexo server process (posts only / posts + drafts)"
@@ -1170,15 +1174,15 @@ This is merely resonable for files in _posts/."
   (hexo-repo-only
    (let ((type (ido-completing-read "[Hexo server] Type: " '("posts-only" "posts+drafts") nil t)))
      (cond ((string= type "posts+drafts")
-            (hexo-open-buffer-and-run-shell-command "_HEXO clean && _HEXO generate && _HEXO server --debug --drafts"))
+            (hexo-open-buffer-and-run-shell-command "__HEXO__ clean && __HEXO__ generate && __HEXO__ server --debug --drafts"))
            ((string= type "posts-only")
-            (hexo-open-buffer-and-run-shell-command "_HEXO clean && _HEXO generate && _HEXO server --debug"))))))
+            (hexo-open-buffer-and-run-shell-command "__HEXO__ clean && __HEXO__ generate && __HEXO__ server --debug"))))))
 
 (defun hexo-server-deploy ()
   "Deploy via hexo server."
   (interactive)
   (hexo-repo-only
-   (hexo-open-buffer-and-run-shell-command "_HEXO clean && _HEXO generate && _HEXO deploy")))
+   (hexo-open-buffer-and-run-shell-command "__HEXO__ clean && __HEXO__ generate && __HEXO__ deploy")))
 
 (defun hexo-server-stop ()
   "Stop all Hexo server processes (posts only / posts + drafts)"
