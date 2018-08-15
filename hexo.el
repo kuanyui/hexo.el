@@ -134,7 +134,7 @@ Please choose a POSIX-compatible shell.")
 (defmacro hexo-repo-only (&rest body)
   `(if (or hexo-root-dir (hexo-find-root-dir))
        (progn ,@body)
-     (message "Please run his command under a Hexo repo directory.")))
+     (message "Please run his command under a Hexo repo directory.\nIf still encounter this problem, please make sure this repo has node_modules/ with `hexo` installed.")))
 
 (defmacro hexo-ensure-hexo-executable-available (&rest body)
   "In BODY, variable `hexo-executable-path' is available."
@@ -145,7 +145,7 @@ Please choose a POSIX-compatible shell.")
 
 (defun hexo-find-hexo-executable (&optional from-path)
   "Try to find hexo in node_modules/ directory.
-If not found, try to `executable-find' hexo in your system."
+  If not found, try to `executable-find' hexo in your system."
   (let* ((root-dir (hexo-find-root-dir from-path))
          (guessed-hexo (hexo-path-join root-dir "/node_modules/hexo/bin/hexo")))
     (if (and (not (eq system-type 'windows-nt)) ; why windows-nt? I forgot.
@@ -176,7 +176,7 @@ If not found, try to `executable-find' hexo in your system."
 
 (defun hexo-message (format-string &rest args)
   "The same as `message', but it `propertize' all ARGS with
-`font-lock-keyword-face'"
+  `font-lock-keyword-face'"
   (apply #'message format-string (mapcar
                                   (lambda (arg)
                                     (propertize (format "%s" arg) 'face 'font-lock-keyword-face))
@@ -189,8 +189,8 @@ If not found, try to `executable-find' hexo in your system."
 
 (defun hexo-overwrite-file-with-string (file-path string)
   "Overwrite the whole file content to STRING.
-If the file has been opened, `save-buffer' it before overwriting.
-Return t if the file is writable, else nil."
+  If the file has been opened, `save-buffer' it before overwriting.
+  Return t if the file is writable, else nil."
   (if (file-writable-p file-path)
       (let ((file-buffer-obj (hexo-get-buffer-if-file-opened file-path)))
         (if file-buffer-obj (with-current-buffer file-buffer-obj (save-buffer)))
@@ -201,13 +201,13 @@ Return t if the file is writable, else nil."
 
 (defun hexo-get-buffer-if-file-opened (file-path)
   "If the FILE-PATH is opened by any buffer, return the buffer
-object."
+  object."
   (cdr (assoc (file-truename file-path)
               (hexo-get-all-opened-files))))
 
 (defun hexo-get-all-opened-files ()
   "Get all currently opened files in Emacs.
-Return ((FILE-PATH . BUFFER) ...)"
+  Return ((FILE-PATH . BUFFER) ...)"
   (cl-remove-if (lambda (x) (null (car x)))
                 (mapcar (lambda (buf) (cons (buffer-file-name buf) buf))
                         (buffer-list))))
@@ -228,7 +228,7 @@ Return ((FILE-PATH . BUFFER) ...)"
 
 (defun hexo-path (path)
   "Return a formal formatted path string.
- If path is a directory, suffix will be / added. Else, remove /."
+  If path is a directory, suffix will be / added. Else, remove /."
   (cond ((null path) nil)
         ((file-directory-p path)
          (if (not (string-suffix-p "/" path))
@@ -241,7 +241,7 @@ Return ((FILE-PATH . BUFFER) ...)"
 
 (defun hexo-find-root-dir (&optional from-path)
   "Try to find the root dir of a Hexo repository.
-Output contains suffix '/' "
+  Output contains suffix '/' "
   (let* ((--from (or from-path hexo-root-dir default-directory))
          (from (hexo-path --from))
          (nodes (split-string from "/")))  ; '("~" "my-hexo-repo" "node_modules")
@@ -293,7 +293,7 @@ Output contains suffix '/' "
   ;; `hexo-generate-tabulated-list-format'), but `tabulated-list'
   ;; provide only a hook called *before* revert.
   "Refresh the articles list.
-Disable current filter (ex: tag) is exist."
+  Disable current filter (ex: tag) is exist."
   (interactive)
   (hexo-mode-only
    (setq hexo-tabulated-list-entries-filter nil) ; remove entries filter <ex> tag filter
@@ -305,7 +305,7 @@ Disable current filter (ex: tag) is exist."
 
 (defun hexo-generate-tabulated-list-format ()
   "This function is for adjusting column size according to
-`window-size'"
+  `window-size'"
   (let* ((status 6)
          (date 11)
          (categories 16)
@@ -324,17 +324,17 @@ Disable current filter (ex: tag) is exist."
 
 (defun hexo-setq-tabulated-list-entries ()
   "This function is used as a hook for `tabulated-list-revert-hook'.
-Also see: `hexo-generate-tabulated-list-entries'"
+  Also see: `hexo-generate-tabulated-list-entries'"
   (setq tabulated-list-entries
         (hexo-generate-tabulated-list-entries hexo-root-dir hexo-tabulated-list-entries-filter)))
 
 (defun hexo-directory-files (dir-path)
   "The same as `directory-files', but remove:
-0. all not .md files
-1. temporary files
-2. special files (e.g. '..')
-3. invalid files (e.g. a broken symbolic link)
-"
+  0. all not .md files
+  1. temporary files
+  2. special files (e.g. '..')
+  3. invalid files (e.g. a broken symbolic link)
+  "
   (if (file-exists-p dir-path)
       (cl-remove-if (lambda (x) (or
                                  (not (file-exists-p x))
@@ -349,9 +349,9 @@ Also see: `hexo-generate-tabulated-list-entries'"
 
 (defun hexo-generate-tabulated-list-entries (&optional repo-root-dir filter)
   "Each element in `tabulated-list-entries' is like:
-(FileFullPath [\"post\" \"test.md\" \"Title\" \"2013/10/24\" \"category\" \"tag, tag2\"])
-id           ^ entry
-FILTER is a function with one arg."
+  (FileFullPath [\"post\" \"test.md\" \"Title\" \"2013/10/24\" \"category\" \"tag, tag2\"])
+  id           ^ entry
+  FILTER is a function with one arg."
   (let ((entries (mapcar #'hexo-generate-file-entry-for-tabulated-list
                          (hexo-get-all-article-files repo-root-dir 'include-drafts))))
     (if filter
@@ -395,10 +395,10 @@ FILTER is a function with one arg."
 
 (defun hexo-get-article-info (file-path)
   "Return a list:
-'((title . title)
-  (date . date)
-  (tags . (tags ...))
-  (categories . (categories ...)))"
+  '((title . title)
+    (date . date)
+    (tags . (tags ...))
+    (categories . (categories ...)))"
   (let ((head-lines (hexo-get-file-head-lines file-path 10)))
     (cl-remove-if
      #'null
@@ -420,11 +420,11 @@ FILTER is a function with one arg."
 
 (defun hexo-generate-file-entry-for-tabulated-list (file-path)
   "Generate the entry of FILE-PATH for `tabulated-list-mode'.
-<ex> (FileFullPath [\"post\" \"test.md\" \"Title\" \"2013/10/24\" \"category\" \"tag, tag2\"])
-     ^ id           ^ entry
-----------------------------------------------------------
-In `tabulated-list-mode', use `tabulated-list-get-id' and
-`tabulated-list-get-entry' to get it."
+  <ex> (FileFullPath [\"post\" \"test.md\" \"Title\" \"2013/10/24\" \"category\" \"tag, tag2\"])
+  ^ id           ^ entry
+  ----------------------------------------------------------
+  In `tabulated-list-mode', use `tabulated-list-get-id' and
+  `tabulated-list-get-entry' to get it."
   (let ((info (hexo-get-article-info file-path)))
     (list file-path
           (vector
@@ -442,11 +442,11 @@ In `tabulated-list-mode', use `tabulated-list-get-id' and
 
 (defun hexo-get-attribute-in-file-entry (key file-entry)
   "FILE-ENTRY is a `vector' generated by
-`hexo-generate-file-entry-for-tabulated-list'.
+  `hexo-generate-file-entry-for-tabulated-list'.
 
-The struct of FILE-ENTRY is defined in `tabulated-list-format'.
-<ex> [(\"Status\" 6 nil) (\"Filename\" 48 nil) (\"Title\" 48 nil)]
-KEY is a downcased symbol. <ex> 'status "
+  The struct of FILE-ENTRY is defined in `tabulated-list-format'.
+  <ex> [(\"Status\" 6 nil) (\"Filename\" 48 nil) (\"Title\" 48 nil)]
+  KEY is a downcased symbol. <ex> 'status "
   (let ((index (cl-position key tabulated-list-format
                             :test (lambda (ele lst)
                                     (equal (capitalize (symbol-name ele))
@@ -543,7 +543,7 @@ KEY is a downcased symbol. <ex> 'status "
 
 (defun hexo-string-match-positions (regexp string &optional subexp-depth)
   "Get all matched REGEXP position in a STRING.
-SUBEXP-DEPTH is 0 by default."
+  SUBEXP-DEPTH is 0 by default."
   (if (null subexp-depth)
       (setq subexp-depth 0))
   (let ((pos 0) result)
@@ -574,7 +574,7 @@ SUBEXP-DEPTH is 0 by default."
           (next-line)
           (message (format "File \"%s\" deleted successfully." filename)))
       (message "Action cancelled; nothing deleted.")
-      ))))
+  ))))
 
 (defun hexo-command-rename-file (&optional init-value)
   "Rename (mv) the filename of the article under the cursor."
