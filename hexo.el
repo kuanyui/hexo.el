@@ -567,16 +567,14 @@ Please choose a POSIX-compatible shell.")
   (hexo-mode-only
    (hexo-mode-article-only
     (if (yes-or-no-p (format "Are you sure to delete file '%s' ?\nATTENTION: THIS ACTION CANNOT BE UNDONE!" (tabulated-list-get-id)))
-        (let* ((filename (tabulated-list-get-id))
-               (image-dir (car (split-string filename "\\."))))
+        (let ((filename (tabulated-list-get-id)))
           (delete-file filename)
+          (previous-line)
           (hexo-command-revert-tabulated-list)
-          (if (yes-or-no-p (format "Do you want to also delete Directory \"%s\"?" image-dir))
-              (progn
-                (delete-directory image-dir t)
-                (message (format "Directory \"%s\" deleted successfully." image-dir)))
-            (message "Action cancelled; Directory is not deleted.")))
-      (message "Action cancelled; Nothing deleted.")))))
+          (next-line)
+          (message (format "File \"%s\" deleted successfully." filename)))
+      (message "Action cancelled; nothing deleted.")
+  ))))
 
 (defun hexo-command-rename-file (&optional init-value)
   "Rename (mv) the filename of the article under the cursor."
