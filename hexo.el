@@ -846,6 +846,8 @@ under theme/default/layout/"
        (message stdout) ; for debug
        (cond ((eq hexo-new-format 'org)
               (rename-file created-md-file-path created-org-file-path)
+              (hexo-command-revert-tabulated-list)
+              (previous-line)
               (find-file created-org-file-path)
               (goto-char 0) (replace-regexp "date:.*"
                                             (concat "#+DATE: " (format-time-string "<%Y-%m-%d %a %H:%M>")))
@@ -860,6 +862,8 @@ under theme/default/layout/"
                                                             (car minibuffer-history))))
               )
              (t
+              (hexo-command-revert-tabulated-list)
+              (previous-line)
               (find-file created-md-file-path)
               (goto-char 0)
               (replace-regexp "title: .+$"
@@ -868,16 +872,16 @@ under theme/default/layout/"
                                                             (car minibuffer-history))))))
        (save-buffer))))))
 
-  (defun hexo--new-read-url-from-user (&optional init-content)
-    (interactive)
-    (let* ((used-urls (mapcar #'file-name-base
-                              (hexo-get-all-article-files nil 'include-drafts)))
-           (url (read-from-minibuffer "Article URL: " (or init-content ""))))
-      (if (member url used-urls)
-          (progn (message "This url has been used, please try another one.")
-                 (sit-for 2)
-                 (hexo--new-read-url-from-user url))
-        url)))
+(defun hexo--new-read-url-from-user (&optional init-content)
+  (interactive)
+  (let* ((used-urls (mapcar #'file-name-base
+                            (hexo-get-all-article-files nil 'include-drafts)))
+         (url (read-from-minibuffer "Article URL: " (or init-content ""))))
+    (if (member url used-urls)
+        (progn (message "This url has been used, please try another one.")
+               (sit-for 2)
+               (hexo--new-read-url-from-user url))
+      url)))
 
 
 ;;;###autoload
