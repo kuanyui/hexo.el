@@ -945,12 +945,17 @@ If success, return the new file path, else nil."
   (let* ((from (hexo-get-article-parent-dir-name file-path))
          (to (if (string= from "_posts") "_drafts" "_posts"))
          (to-path (hexo-path-join (hexo-find-root-dir file-path)
-                                  "/source/" to (file-name-nondirectory file-path))))
+                                  "/source/" to (file-name-nondirectory file-path)))
+         (assets-dirname (file-name-base file-path))
+         (assets-from (hexo-path-join (file-name-directory file-path) assets-dirname))
+         (assets-to (hexo-path-join (file-name-directory to-path) assets-dirname)))
     (if (file-exists-p to-path)
         (prog1 nil
           (message (format "A file with the same name has existed in %s, please rename and try again." to)))
       (prog1 to-path
         (rename-file file-path to-path)
+        (when (file-exists-p assets-from)
+          (rename-file assets-from assets-to))
         (hexo-message "Now article '%s' is in '%s'" (file-name-base to-path) to)
         ))))
 
