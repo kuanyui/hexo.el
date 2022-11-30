@@ -28,6 +28,24 @@ You can define your function to open a specified hexo repository directly like t
     (hexo "~/my-blog/"))
 #+END_SRC
 
+** Node Version & Hexo Version
+
+You can check the compatibility of the version combinations of NodeJS & Hexo in Hexo's official documentation: https://hexo.io/docs/#Required-Node-js-version
+
+*** Hexo Version
+
+=hexo.el= will always try to find the =hexo= binary in repo local =node_modules= first, then system-wide =hexo=.
+
+*** Node Version
+
+If you want to execute =hexo= with the Node version against system's via [[https://github.com/nvm-sh/nvm][nvm]], you should add the following settings:
+
+#+begin_src elisp
+(setq hexo-nvm-enabled t)
+(setq hexo-nvm-dir (getenv "NVM_DIR"))  ; Optional. If your Emacs environment has no this envvar set, please set manually.
+(setq hexo-nvm-use-version "6")   ; This means "nvm use 6"
+#+end_src
+
 ** Not A Bash / Zsh User?
 
 If you're using a shell beyond =bash= / =zsh= (ex: =fish=), you may have set =shell-file-name= to your prefered shell. However this would broken some functions of =hexo.el=. To prevent this, please specify the path to a POSIX-compatible shell.
