@@ -59,6 +59,25 @@ Please choose a POSIX-compatible shell.")
 (defvar hexo-new-format 'md
   "The article format for `hexo-new'. Available formats: `md', `org'")
 
+(defvar hexo-nvm-enabled nil
+  "Whether use nvm to run hexo. See `hexo-nvm-use-version'.")
+
+
+(defvar hexo-nvm-dir (getenv "NVM_DIR")
+  "If you want to use nvm to run hexo, the value of this variable should be $NVM_DIR
+  (By default, it should be ~/.nvm)")
+
+(defvar hexo-nvm-use-version "6"
+  "Specify the Node version with nvm.
+
+This should be a string, which will be passed to \"nvm use VERSION\".
+For example, \"6.17.1\", \"6\"
+
+Please see the Hexo official documentation, there's a
+compatibility table of Hexo version & Node version:
+
+https://hexo.io/docs/#Required-Node-js-version")
+
 ;; ======================================================
 ;; Faces
 ;; ======================================================
@@ -569,12 +588,10 @@ Please choose a POSIX-compatible shell.")
     (if (yes-or-no-p (format "Are you sure to delete file '%s' ?\nATTENTION: THIS ACTION CANNOT BE UNDONE!" (tabulated-list-get-id)))
         (let ((filename (tabulated-list-get-id)))
           (delete-file filename)
-          (previous-line)
           (hexo-command-revert-tabulated-list)
-          (next-line)
           (message (format "File \"%s\" deleted successfully." filename)))
       (message "Action cancelled; nothing deleted.")
-  ))))
+      ))))
 
 (defun hexo-command-rename-file (&optional init-value)
   "Rename (mv) the filename of the article under the cursor."
@@ -1156,12 +1173,18 @@ This is merely resonable for files in _posts/."
               (sit-for 0.5)))            ;WTF
    (if (get-buffer hexo-process-buffer-name)
        (kill-buffer hexo-process-buffer-name))
-   (let ((buffer-obj (get-buffer-create hexo-process-buffer-name)))
+   (let ((buffer-obj (get-buffer-create hexo-process-buffer-name))
+         (shell-scripts (hexo-replace-hexo-command-to-path command-string repo-path)))
+     (if hexo-nvm-enabled
+         (setq shell-scripts
+               (format "source %s && nvm use %s && %s"
+                       (hexo-path-join hexo-nvm-dir "nvm.sh")
+                       hexo-nvm-use-version
+                       shell-scripts)))
      (pop-to-buffer buffer-obj)
      (with-current-buffer buffer-obj
        (setq default-directory (hexo-find-root-dir repo-path)))
-     (async-shell-command (hexo-replace-hexo-command-to-path command-string repo-path)
-                          buffer-obj)
+     (async-shell-command shell-scripts buffer-obj buffer-obj)
      (setq hexo-process (get-buffer-process buffer-obj))
      (set-process-filter hexo-process 'comint-output-filter)
      )))
@@ -1178,9 +1201,9 @@ This is merely resonable for files in _posts/."
   (hexo-repo-only
    (let ((type (ido-completing-read "[Hexo server] Type: " '("posts-only" "posts+drafts") nil t)))
      (cond ((string= type "posts+drafts")
-            (hexo-open-buffer-and-run-shell-command "__HEXO__ clean && __HEXO__ generate && __HEXO__ server --debug --drafts"))
+            (hexo-open-buffer-and-run-shell-command "__HEXO__ clean && __HEXO__ generate && echo '====== START SERVER =====' &&  __HEXO__ server --debug --drafts"))
            ((string= type "posts-only")
-            (hexo-open-buffer-and-run-shell-command "__HEXO__ clean && __HEXO__ generate && __HEXO__ server --debug"))))))
+            (hexo-open-buffer-and-run-shell-command "__HEXO__ clean && __HEXO__ generate && echo '====== START SERVER =====' &&  __HEXO__ server --debug"))))))
 
 (defun hexo-server-deploy ()
   "Deploy via hexo server."
